@@ -39,3 +39,19 @@ Halaman admin untuk mengelola API keys (Google Gemini, Groq, OpenWeather) langsu
 #### Metode Testing
 - **Manual:** Login admin → Sidebar → API Settings → isi key → test → simpan → reload → verifikasi masked value.
 - **Integrasi:** Verifikasi AI Chat dan Weather masih berfungsi dengan key dari database.
+
+### 2. Auto-Assign Port & Panduan Hardware
+**Status:** ✅ Selesai  
+**Tanggal:** 2026-07-19  
+
+#### Deskripsi
+- Penambahan fungsi pencarian port kosong otomatis (`find_free_port()`) di `run.sh`. Jika `WEB_PORT` yang diatur di `.env` sudah terpakai oleh proses lain, script otomatis mencari port terdekat yang kosong dan langsung memperbarui `.env`.
+- Pembuatan dokumen `PANDUAN_HARDWARE.md` untuk tim hardware yang berisi cara konfigurasi *firmware* ESP32, instalasi library, *wiring diagram*, serta langkah pengetesan agar alat bisa terhubung ke server.
+
+#### Perubahan Teknis
+- **`run.sh`**: Tambah fungsi `find_free_port()`, modifikasi fungsi `check_port()` agar memperbarui `WEB_PORT` via `set_env_value`.
+- **`PANDUAN_HARDWARE.md`**: File panduan Markdown baru.
+
+#### Metode Testing
+- **Manual (Port):** Jalankan proses di port 8097, deploy ulang dengan `./run.sh deploy`, pastikan script menemukan port baru (misal 8098) dan memperbarui `.env`.
+- **Manual (Panduan):** Verifikasi konten panduan sesuai dengan *codebase* terkini.
