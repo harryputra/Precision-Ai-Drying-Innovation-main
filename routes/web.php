@@ -16,7 +16,7 @@ use App\Http\Controllers\Web\ProfileController;
 use App\Http\Controllers\Web\ApiSettingsController;
 use App\Http\Controllers\Web\QuickLoginAdminController;
 use App\Http\Controllers\Web\QuickLoginController;
-use App\Http\Controllers\Web\RoleController;
+use App\Http\Controllers\Web\SimulatorController;
 use App\Http\Controllers\Web\ViewerDashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -67,6 +67,11 @@ Route::middleware('auth')->group(function () {
     // AI Manual Trigger — admin + operator only
     Route::middleware('role:admin,operator')->group(function () {
         Route::post('/ai/trigger-decision', [AiDecisionWebController::class, 'triggerDecision'])->name('web.ai.trigger');
+    });
+
+    // Simulator — admin + operator only
+    Route::middleware('role:admin,operator')->group(function () {
+        Route::get('/simulator', [SimulatorController::class, 'index'])->name('simulator.index');
     });
 
     // Notifications — semua role (own notifications)

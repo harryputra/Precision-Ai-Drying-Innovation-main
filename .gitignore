@@ -27,6 +27,11 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
 # Arsip lokal — jangan ikut repo
 *.rar
 *.zip

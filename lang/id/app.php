@@ -62,6 +62,7 @@ return [
     'nav_sensor_short' => 'Sensor',
     'nav_batches_short'=> 'Batch',
     'nav_notif_short'  => 'Notif',
+    'nav_simulator'    => 'Simulator',
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
     'dashboard'                => 'Dashboard',
@@ -91,6 +92,17 @@ return [
     'world_class'              => 'World Class',
     'average'                  => 'Rata-rata',
     'needs_improvement'        => 'Perlu Perbaikan',
+
+    // ── Simulator ─────────────────────────────────────────────────────────────
+    'simulator_title'         => 'Simulator Mesin Pengering',
+    'simulator_subtitle'      => 'Kirim data sensor virtual ke dashboard secara real-time',
+    'simulator_device'        => 'Device',
+    'simulator_setpoint'      => 'Setpoint Suhu',
+    'simulator_target_moisture' => 'Target Kadar Air',
+    'simulator_interval'      => 'Interval Kirim',
+    'simulator_start'         => 'Mulai',
+    'simulator_pause'         => 'Jeda',
+    'simulator_reset'         => 'Reset',
 
     // ── Devices ───────────────────────────────────────────────────────────────
     'devices'              => 'Device',

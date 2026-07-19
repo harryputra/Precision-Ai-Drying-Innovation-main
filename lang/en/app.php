@@ -62,6 +62,7 @@ return [
     'nav_sensor_short' => 'Sensor',
     'nav_batches_short'=> 'Batches',
     'nav_notif_short'  => 'Notif',
+    'nav_simulator'    => 'Simulator',
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
     'dashboard'                => 'Dashboard',
@@ -91,6 +92,17 @@ return [
     'world_class'              => 'World Class',
     'average'                  => 'Average',
     'needs_improvement'        => 'Needs Improvement',
+
+    // ── Simulator ─────────────────────────────────────────────────────────────
+    'simulator_title'         => 'Grain Dryer Simulator',
+    'simulator_subtitle'      => 'Send virtual sensor data to the dashboard in real-time',
+    'simulator_device'        => 'Device',
+    'simulator_setpoint'      => 'Temperature Setpoint',
+    'simulator_target_moisture' => 'Target Moisture',
+    'simulator_interval'      => 'Send Interval',
+    'simulator_start'         => 'Start',
+    'simulator_pause'         => 'Pause',
+    'simulator_reset'         => 'Reset',
 
     // ── Devices ───────────────────────────────────────────────────────────────
     'devices'              => 'Devices',

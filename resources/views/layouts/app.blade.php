@@ -225,6 +225,16 @@
 
             <div class="sidebar-section-label">{{ __('app.nav_system') }}</div>
 
+            @if(auth()->user()->role === 'admin' || auth()->user()->role === 'operator')
+            <a href="{{ route('simulator.index') }}"
+               class="sidebar-item {{ request()->routeIs('simulator.*') ? 'active' : '' }}">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                {{ __('app.nav_simulator') }}
+            </a>
+            @endif
+
             <a href="{{ route('web.notifications.index') }}"
                class="sidebar-item {{ request()->routeIs('notifications.*') ? 'active' : '' }}">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;">
