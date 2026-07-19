@@ -8,70 +8,108 @@
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes spin-reverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
     @keyframes pulse-glow {
-        0%, 100% { filter: drop-shadow(0 0 4px #f97316); opacity: 0.7; }
-        50% { filter: drop-shadow(0 0 12px #f97316); opacity: 1; }
+        0%, 100% { filter: drop-shadow(0 0 3px #f97316); opacity: 0.65; }
+        50% { filter: drop-shadow(0 0 10px #f97316); opacity: 1; }
     }
     @keyframes grain-move {
         0% { transform: translateY(0) rotate(0deg); }
-        25% { transform: translateY(-3px) rotate(5deg); }
+        25% { transform: translateY(-2px) rotate(4deg); }
         50% { transform: translateY(0) rotate(0deg); }
-        75% { transform: translateY(3px) rotate(-5deg); }
+        75% { transform: translateY(2px) rotate(-4deg); }
         100% { transform: translateY(0) rotate(0deg); }
     }
     @keyframes float-cloud {
-        0% { transform: translateX(-10px); }
-        50% { transform: translateX(10px); }
-        100% { transform: translateX(-10px); }
+        0% { transform: translateX(-12px); }
+        50% { transform: translateX(12px); }
+        100% { transform: translateX(-12px); }
     }
     @keyframes steam-rise {
-        0% { opacity: 0; transform: translateY(0) scale(0.8); }
-        50% { opacity: 0.6; }
-        100% { opacity: 0; transform: translateY(-40px) scale(1.3); }
+        0% { opacity: 0; transform: translateY(0) scale(0.7); }
+        40% { opacity: 0.55; }
+        100% { opacity: 0; transform: translateY(-50px) scale(1.5); }
     }
     @keyframes beam-pulse {
-        0%, 100% { opacity: 0.3; }
-        50% { opacity: 0.7; }
+        0%, 100% { opacity: 0.35; }
+        50% { opacity: 0.75; }
     }
     @keyframes led-blink {
         0%, 100% { opacity: 1; box-shadow: 0 0 6px currentColor; }
-        50% { opacity: 0.5; box-shadow: 0 0 2px currentColor; }
+        50% { opacity: 0.55; box-shadow: 0 0 2px currentColor; }
     }
     @keyframes data-packet {
         0% { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
-        100% { opacity: 0; transform: translateX(120px) translateY(-80px) scale(0.4); }
+        100% { opacity: 0; transform: translateX(140px) translateY(-90px) scale(0.3); }
+    }
+    @keyframes mixer-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    @keyframes airflow-dash {
+        to { stroke-dashoffset: -20; }
+    }
+    @keyframes heat-shimmer {
+        0% { opacity: 0; transform: translateY(0) scaleY(1); }
+        50% { opacity: 0.25; transform: translateY(-6px) scaleY(1.1); }
+        100% { opacity: 0; transform: translateY(-12px) scaleY(1.2); }
+    }
+    @keyframes machine-pulse {
+        0% { transform: scale(1); filter: brightness(1); }
+        50% { transform: scale(1.008); filter: brightness(1.08); }
+        100% { transform: scale(1); filter: brightness(1); }
+    }
+    @keyframes progress-fill {
+        0% { width: 0%; }
+        100% { width: 100%; }
     }
 
     .fan-blade { transform-origin: center; }
-    .fan-blade.on { animation: spin 0.6s linear infinite; }
+    .fan-blade.on { animation: spin 0.55s linear infinite; }
     .fan-blade.exhaust { animation: spin-reverse 0.4s linear infinite; }
 
-    .heater-coil { transition: all 0.4s ease; }
-    .heater-coil.on { animation: pulse-glow 1.2s ease-in-out infinite; }
+    .heater-coil { transition: all 0.35s ease; }
+    .heater-coil.on { animation: pulse-glow 1.1s ease-in-out infinite; }
+    .heater-glow { opacity: 0; transition: opacity 0.4s ease; }
+    .heater-glow.on { opacity: 0.85; }
 
     .grain-particle { transform-origin: center; }
-    .grain-particle.on { animation: grain-move 0.8s ease-in-out infinite; }
-    .grain-particle.on:nth-child(odd) { animation-duration: 1.1s; }
-    .grain-particle.on:nth-child(even) { animation-duration: 0.9s; animation-delay: 0.2s; }
+    .grain-particle.on { animation: grain-move 0.9s ease-in-out infinite; }
+    .grain-particle.on:nth-child(odd) { animation-duration: 1.15s; }
+    .grain-particle.on:nth-child(even) { animation-duration: 0.85s; animation-delay: 0.18s; }
 
-    .cloud { animation: float-cloud 8s ease-in-out infinite; }
-    .cloud:nth-child(2) { animation-duration: 12s; animation-delay: -3s; }
-    .cloud:nth-child(3) { animation-duration: 10s; animation-delay: -6s; }
+    .cloud { animation: float-cloud 9s ease-in-out infinite; }
+    .cloud:nth-child(2) { animation-duration: 13s; animation-delay: -4s; }
+    .cloud:nth-child(3) { animation-duration: 11s; animation-delay: -7s; }
 
     .steam-particle { opacity: 0; }
-    .steam-particle.on { animation: steam-rise 2s ease-out infinite; }
-    .steam-particle.on:nth-child(2) { animation-delay: 0.4s; }
-    .steam-particle.on:nth-child(3) { animation-delay: 0.8s; }
+    .steam-particle.on { animation: steam-rise 2.2s ease-out infinite; }
+    .steam-particle.on:nth-child(2) { animation-delay: 0.5s; }
+    .steam-particle.on:nth-child(3) { animation-delay: 1s; }
 
-    .sun-beam { animation: beam-pulse 3s ease-in-out infinite; }
-    .sun-beam:nth-child(2) { animation-delay: 0.5s; }
-    .sun-beam:nth-child(3) { animation-delay: 1s; }
+    .sun-beam { animation: beam-pulse 3.2s ease-in-out infinite; }
+    .sun-beam:nth-child(2) { animation-delay: 0.6s; }
+    .sun-beam:nth-child(3) { animation-delay: 1.2s; }
 
     .led { width: 10px; height: 10px; border-radius: 50%; display: inline-block; transition: all 0.3s; }
-    .led.on { animation: led-blink 1.5s ease-in-out infinite; }
+    .led.on { animation: led-blink 1.4s ease-in-out infinite; }
     .led.off { background: #94a3b8 !important; box-shadow: none !important; opacity: 0.4; }
 
     .data-packet { opacity: 0; }
-    .data-packet.sending { animation: data-packet 0.8s ease-out forwards; }
+    .data-packet.sending { animation: data-packet 0.85s ease-out forwards; }
+
+    .mixer-icon { transform-origin: center; }
+    .mixer-icon.on { animation: mixer-spin 1s linear infinite; }
+
+    .airflow-arrow { stroke-dasharray: 6 6; opacity: 0; transition: opacity 0.4s ease; }
+    .airflow-arrow.on { animation: airflow-dash 0.9s linear infinite; opacity: 0.4; }
+    .airflow-arrow.on.exhaust { opacity: 0.35; }
+
+    .heat-shimmer { opacity: 0; }
+    .heat-shimmer.on { animation: heat-shimmer 1.6s ease-out infinite; }
+    .heat-shimmer.on:nth-child(2) { animation-delay: 0.5s; }
+    .heat-shimmer.on:nth-child(3) { animation-delay: 1s; }
+
+    .machine-pulse { transform-origin: center; }
+    .machine-pulse.sending { animation: machine-pulse 0.45s ease-out; }
 
     .simulator-metric-card {
         background: #ffffff;
