@@ -3,10 +3,10 @@
 @section('breadcrumb', __('app.nav_ai_system') . ' / ' . __('app.nav_ai_chat'))
 
 @section('content')
-<div x-data="aiChat()" x-init="init()" style="height:calc(100vh - 140px);display:flex;gap:1rem;">
+<div x-data="aiChat()" x-init="init()" class="chat-layout" :class="showSessions ? 'show-sessions' : ''">
 
     {{-- Session List --}}
-    <div class="glass-card" style="width:260px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="glass-card chat-sessions">
         <div style="padding:0.875rem 1rem;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">
             <span style="font-size:0.8rem;font-weight:600;color:#0f172a;">{{ __('app.conversations') }}</span>
             <button @click="newSession()" class="btn-primary btn-sm">
@@ -36,14 +36,22 @@
     </div>
 
     {{-- Chat Window --}}
-    <div class="glass-card" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+    <div class="glass-card chat-window">
 
         {{-- Context Bar --}}
-        <div style="padding:0.75rem 1rem;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
+        <div style="padding:0.75rem 1rem;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" style="flex-shrink:0;"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/></svg>
             <span style="font-size:0.75rem;color:#1e293b;">AI Assistant — Padi PRECISION</span>
-            <div style="margin-left:auto;display:flex;gap:0.5rem;">
-                <select x-model="deviceId" class="input-dark" style="width:150px;padding:0.25rem 0.5rem;font-size:0.75rem;">
+            <div style="margin-left:auto;display:flex;gap:0.5rem;align-items:center;">
+                {{-- Toggle riwayat percakapan — hanya tampil di HP --}}
+                <button type="button" @click="showSessions = !showSessions"
+                        class="btn-secondary btn-sm chat-sessions-toggle" style="font-size:0.72rem;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/>
+                    </svg>
+                    <span x-text="showSessions ? '{{ __('app.conversations') }} ✕' : '{{ __('app.conversations') }}'"></span>
+                </button>
+                <select x-model="deviceId" class="input-dark" style="width:150px;max-width:42vw;padding:0.25rem 0.5rem;font-size:0.75rem;">
                     <option value="">{{ __('app.select_device') }}</option>
                     @foreach($devices as $d)
                     <option value="{{ $d->id }}">{{ $d->device_name }}</option>
@@ -152,6 +160,7 @@ function aiChat() {
     return {
         messageInput: '',
         isTyping: false,
+        showSessions: false,   // panel riwayat (mobile) — desktop selalu tampil via CSS
         sessionId: '{{ $currentSessionId ?? "" }}',
         deviceId: '',
 

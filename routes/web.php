@@ -45,6 +45,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthWebController::class, 'logout'])->name('logout');
 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    // Polling kartu statistik dashboard (sesi web, bukan token API)
+    Route::get('/api/dashboard/stats', [DashboardController::class, 'stats'])->name('web.dashboard.stats');
 
     // Sensor & Weather — read-only, semua role
     Route::get('/sensor-readings', [SensorWebController::class, 'index'])->name('web.sensor.index');

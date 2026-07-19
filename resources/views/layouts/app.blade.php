@@ -5,7 +5,7 @@
 >
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     {{-- Konfigurasi Echo/Reverb runtime (dibaca resources/js/app.js) --}}
     <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
@@ -27,12 +27,26 @@
 
         /* Sidebar: hidden off-screen on mobile, shown on desktop */
         #app-sidebar {
-            position: fixed; top: 0; left: 0; height: 100vh; width: 220px;
+            position: fixed; top: 0; left: 0; height: 100vh; height: 100dvh; width: 220px;
             z-index: 50; display: flex; flex-direction: column;
             background: linear-gradient(180deg, #052e16 0%, #166534 40%, #15803d 100%);
             box-shadow: 4px 0 24px rgba(22,101,52,0.2);
             transition: transform 0.28s cubic-bezier(.4,0,.2,1);
             transform: translateX(-100%);
+        }
+        /* HP: drawer sedikit lebih lebar agar item nyaman disentuh */
+        @media (max-width: 1023.98px) {
+            #app-sidebar { width: min(80vw, 256px); }
+        }
+        /* Tombol tutup drawer — hanya tampil di mobile */
+        .sidebar-close { display: none; }
+        @media (max-width: 1023.98px) {
+            .sidebar-close {
+                display: flex; align-items: center; justify-content: center;
+                width: 34px; height: 34px; margin-left: auto; flex-shrink: 0;
+                background: rgba(255,255,255,0.12); border: none; border-radius: 9px;
+                color: rgba(255,255,255,0.85); cursor: pointer;
+            }
         }
         /* Desktop: sidebar always visible */
         @media (min-width: 1024px) {
@@ -44,8 +58,8 @@
             margin-left: 0;
             min-height: 100vh;
             background: #f0fdf4;
-            /* room for bottom nav on mobile */
-            padding-bottom: 60px;
+            /* room for bottom nav + home indicator (safe area) on mobile */
+            padding-bottom: calc(64px + env(safe-area-inset-bottom));
             transition: margin-left 0.28s cubic-bezier(.4,0,.2,1);
         }
         @media (min-width: 1024px) {
@@ -56,7 +70,9 @@
         #bottom-nav {
             display: flex;
             position: fixed; bottom: 0; left: 0; right: 0;
-            height: 56px; z-index: 40;
+            height: calc(56px + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 40;
             background: #ffffff;
             border-top: 1px solid #e2e8f0;
             box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
@@ -78,17 +94,23 @@
 </head>
 <body x-data="{
         sidebarOpen: window.innerWidth >= 1024,
+        winW: window.innerWidth,
         notifCount: {{ auth()->user()?->unreadNotificationsCount() ?? 0 }}
      }"
-     x-init="window.addEventListener('resize', () => { sidebarOpen = window.innerWidth >= 1024; })">
+     x-init="window.addEventListener('resize', () => {
+         // Hanya bereaksi bila LEBAR berubah — di HP, show/hide URL bar
+         // memicu resize (tinggi saja) dan tidak boleh menutup drawer
+         if (window.innerWidth !== winW) { winW = window.innerWidth; sidebarOpen = winW >= 1024; }
+     })"
+     :class="{ 'no-scroll': sidebarOpen && winW < 1024 }">
 
     {{-- ===== SIDEBAR ===== --}}
     <aside id="app-sidebar"
            :style="sidebarOpen ? 'transform:translateX(0)' : 'transform:translateX(-100%)'">
 
         {{-- Logo --}}
-        <div style="padding:1rem 0.875rem;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0;background:linear-gradient(180deg,rgba(5,46,22,0.8),transparent);">
-            <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;gap:0.625rem;text-decoration:none;">
+        <div style="padding:1rem 0.875rem;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0;background:linear-gradient(180deg,rgba(5,46,22,0.8),transparent);display:flex;align-items:center;gap:0.5rem;">
+            <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;gap:0.625rem;text-decoration:none;min-width:0;">
                 <div style="position:relative;flex-shrink:0;">
                     <img src="{{ asset('images/logo.jpeg') }}" alt="Logo" style="width:36px;height:36px;border-radius:10px;object-fit:cover;box-shadow:0 2px 12px rgba(212,160,23,0.4),0 0 0 2px rgba(212,160,23,0.3);">
                     <div style="position:absolute;inset:0;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.2);"></div>
@@ -98,6 +120,12 @@
                     <div style="font-size:0.52rem;color:rgba(212,160,23,0.85);font-weight:700;letter-spacing:0.1em;margin-top:2px;text-transform:uppercase;">Precision · AI · Drying</div>
                 </div>
             </a>
+            {{-- Tutup drawer (mobile) --}}
+            <button type="button" class="sidebar-close" @click="sidebarOpen = false" aria-label="Tutup menu">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
         </div>
 
         {{-- Navigation --}}
@@ -290,7 +318,7 @@
     </aside>
 
     {{-- Mobile overlay --}}
-    <div x-show="sidebarOpen && window.innerWidth < 1024"
+    <div x-show="sidebarOpen && winW < 1024"
          x-cloak
          @click="sidebarOpen = false"
          style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:40;"
@@ -304,7 +332,7 @@
 
     {{-- ===== MAIN CONTENT ===== --}}
     <div id="main-content"
-         :style="sidebarOpen && window.innerWidth >= 1024 ? 'margin-left:220px' : 'margin-left:0'">
+         :style="sidebarOpen && winW >= 1024 ? 'margin-left:220px' : 'margin-left:0'">
 
         {{-- Topbar --}}
         <header class="topbar"
@@ -401,7 +429,7 @@
         @endif
 
         {{-- Page Content --}}
-        <main style="padding:0.75rem 1rem;">
+        <main class="main-pad">
             @yield('content')
         </main>
     </div>
@@ -474,6 +502,19 @@
         table.dataTable thead .sorting::after,
         table.dataTable thead .sorting_asc::after,
         table.dataTable thead .sorting_desc::after { opacity: 0.6; }
+
+        /* Mobile: toolbar DataTables menumpuk rapi, tabel scroll sendiri */
+        @media (max-width: 767.98px) {
+            .dataTables_wrapper { padding: 0.5rem 0.75rem 0.75rem; }
+            .dataTables_wrapper .dataTables_length,
+            .dataTables_wrapper .dataTables_filter {
+                float: none; text-align: left; margin-bottom: 0.5rem;
+            }
+            .dataTables_wrapper .dataTables_filter input {
+                width: min(100%, 240px); margin-left: 4px;
+            }
+            .dataTables_wrapper .dataTables_paginate { float: none; text-align: left; }
+        }
     </style>
 
     @stack('scripts')

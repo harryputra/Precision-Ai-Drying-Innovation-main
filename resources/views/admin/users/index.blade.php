@@ -4,7 +4,7 @@
 
 @section('content')
 
-<div class="page-header-banner" style="padding:1.5rem 1.75rem;margin-bottom:1.25rem;">
+<div class="page-header-banner" style="margin-bottom:1.25rem;">
     <div style="position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
         <div>
             <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.9);margin-bottom:0.375rem;">Admin</div>
@@ -26,7 +26,7 @@
     </div>
 </div>
 
-<div style="padding:0 1.75rem 2rem;">
+<div style="padding:0 0 1.5rem;">
 
     @if(session('success'))
     <div style="background:#dcfce7;border:1px solid #86efac;color:#166534;border-radius:10px;padding:0.75rem 1rem;margin-bottom:1.25rem;font-size:0.85rem;">

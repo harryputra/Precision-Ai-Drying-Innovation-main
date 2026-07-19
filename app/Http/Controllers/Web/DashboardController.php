@@ -8,11 +8,28 @@ use App\Models\AiDecision;
 use App\Models\Device;
 use App\Models\DryingBatch;
 use App\Models\SensorReading;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    /**
+     * Polling ringan kartu statistik — dipanggil JS dashboard tiap 30 detik
+     * (sebelumnya 404 karena endpoint tidak pernah dibuat).
+     */
+    public function stats(): JsonResponse
+    {
+        return response()->json([
+            'active_batches'    => DryingBatch::active()->count(),
+            'waiting_batches'   => DryingBatch::where('status', 'waiting')->count(),
+            'drying_batches'    => DryingBatch::where('status', 'drying')->count(),
+            'completed_batches' => DryingBatch::where('status', 'completed')->count(),
+            'cancelled_batches' => DryingBatch::where('status', 'failed')->count(),
+            'online_devices'    => Device::online()->count(),
+        ]);
+    }
+
     public function index(): View|RedirectResponse
     {
         // Viewer (petani) tidak boleh akses dashboard teknikal

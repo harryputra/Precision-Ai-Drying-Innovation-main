@@ -993,3 +993,102 @@ nav[role="navigation"] svg {
 .dark *::-webkit-scrollbar-track { background: #1e293b; }
 .dark *::-webkit-scrollbar-thumb { background: #334155; }
 .dark *::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* =============================================
+   Responsive hardening — nyaman di HP / tablet / laptop
+   ============================================= */
+
+/* Halaman tidak pernah scroll horizontal; scroll hanya di kontainer tabel.
+   overflow-x: clip (bukan hidden) agar position:sticky topbar tetap bekerja. */
+html, body { max-width: 100%; overflow-x: hidden; overflow-x: clip; }
+
+/* Kunci scroll body saat drawer sidebar terbuka di mobile */
+.no-scroll { overflow: hidden !important; }
+
+/* Padding konten utama: rapat di HP, lega di desktop */
+.main-pad { padding: 0.75rem 0.875rem; }
+@media (min-width: 768px)  { .main-pad { padding: 1rem 1.25rem; } }
+@media (min-width: 1280px) { .main-pad { padding: 1.25rem 1.5rem; } }
+
+/* Semua tabel data: scroll horizontal sendiri di bawah desktop.
+   display:block pada <table> membuat kotak tabel bisa scroll tanpa
+   perlu membungkus markup satu-satu (thead/tbody tetap sejajar). */
+@media (max-width: 1023.98px) {
+    .card table,
+    .glass-card table,
+    .dataTables_wrapper table.dataTable {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+    }
+}
+
+/* Grid 2-kolom yang ditulis inline (detail AI, batch show, form viewer):
+   di HP ditumpuk 1 kolom. Selector atribut menarget inline style saja —
+   grid berbasis class (viewer sensor-grid, dll.) tidak ikut terpengaruh. */
+@media (max-width: 767.98px) {
+    [style*="grid-template-columns:1fr 1fr"],
+    [style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Sidebar item: tap target lebih nyaman di layar sentuh */
+@media (max-width: 1023.98px) {
+    .sidebar-item { padding: 0.7rem 1rem; font-size: 0.875rem; }
+}
+
+/* Topbar rapat di HP (menimpa inline style — perlu !important) */
+@media (max-width: 640px) {
+    header.topbar { padding: 0.5rem 0.625rem !important; gap: 0.4rem !important; }
+}
+
+/* Toast: di HP melebar mengikuti layar, di atas bottom-nav + safe area */
+@media (max-width: 480px) {
+    #toast-container {
+        left: 0.75rem;
+        right: 0.75rem !important;
+        max-width: none !important;
+        bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+    }
+}
+
+/* Baris info label–nilai boleh melipat bila nilai panjang */
+.info-row { flex-wrap: wrap; }
+
+/* =============================================
+   AI Chat — 2 panel di desktop, tumpuk + riwayat toggle di HP
+   ============================================= */
+.chat-layout { display: flex; gap: 1rem; height: calc(100vh - 150px); }
+@supports (height: 100dvh) { .chat-layout { height: calc(100dvh - 150px); } }
+
+.chat-sessions {
+    width: 260px; flex-shrink: 0;
+    display: flex; flex-direction: column; overflow: hidden;
+}
+.chat-window {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; overflow: hidden;
+}
+.chat-sessions-toggle { display: none; }
+
+@media (max-width: 767.98px) {
+    .chat-layout {
+        flex-direction: column;
+        height: calc(100vh - 190px);
+        min-height: 420px;
+    }
+    @supports (height: 100dvh) {
+        .chat-layout { height: calc(100dvh - 190px); }
+    }
+    /* Riwayat percakapan disembunyikan; muncul lewat tombol Riwayat */
+    .chat-sessions { display: none; }
+    .chat-layout.show-sessions .chat-sessions {
+        display: flex; width: 100%; max-height: 40%; flex-shrink: 0;
+    }
+    .chat-sessions-toggle { display: inline-flex; }
+    .chat-window { min-height: 0; }
+    /* Bubble sedikit lebih lebar di layar sempit */
+    .chat-bubble-user, .chat-bubble-ai { max-width: 95%; }
+}

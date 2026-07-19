@@ -24,16 +24,20 @@ const reverbScheme = meta('reverb-scheme') || (pageSecure ? 'https' : 'http');
 const reverbHost = meta('reverb-host') || window.location.hostname;
 const reverbPort = Number(meta('reverb-port') || window.location.port || (pageSecure ? 443 : 80));
 
-window.Echo = new Echo({
-    broadcaster: 'reverb',
-    key: reverbKey,
-    wsHost: reverbHost,
-    wsPort: reverbPort,
-    wssPort: reverbPort,
-    forceTLS: reverbScheme === 'https',
-    enabledTransports: ['ws', 'wss'],
-    disableStats: true,
-});
+// Halaman tanpa meta reverb-key (mis. layout guest/login) tidak butuh
+// realtime — jangan instansiasi Echo tanpa key (error "must pass app key")
+if (reverbKey) {
+    window.Echo = new Echo({
+        broadcaster: 'reverb',
+        key: reverbKey,
+        wsHost: reverbHost,
+        wsPort: reverbPort,
+        wssPort: reverbPort,
+        forceTLS: reverbScheme === 'https',
+        enabledTransports: ['ws', 'wss'],
+        disableStats: true,
+    });
+}
 
 // Default ApexCharts dark theme config
 window.apexDarkConfig = {
