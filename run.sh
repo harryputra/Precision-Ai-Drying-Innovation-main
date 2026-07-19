@@ -100,16 +100,26 @@ check_secrets(){
 
 # ---------- cek port bentrok sebelum start ----------
 port_in_use(){ (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null && { exec 3>&- 3<&- || true; return 0; } || return 1; }
+find_free_port(){
+  local port=$1
+  while port_in_use "$port"; do
+    port=$((port+1))
+  done
+  echo "$port"
+}
 check_port(){
   load_env
   if port_in_use "$WEB_PORT"; then
     if [ -n "$(dc ps -q "$APP_SVC" 2>/dev/null)" ]; then
       log "Port ${WEB_PORT} dipakai stack ini sendiri — container akan di-update in-place."
     else
-      err "Port ${WEB_PORT} sudah dipakai proses lain (bukan stack ${COMPOSE_PROJECT_NAME})."
-      warn "Jika app produksi project ini sudah jalan: pakai ${BOLD}./run.sh status${N} / ${BOLD}prod-logs${N} / ${BOLD}prod-down${N}."
-      warn "Atau ganti ${BOLD}WEB_PORT${N} di ${ENV_FILE}, lalu jalankan ulang."
-      exit 1
+      warn "Port ${WEB_PORT} sudah dipakai proses lain (bukan stack ${COMPOSE_PROJECT_NAME})."
+      local new_port
+      new_port=$(find_free_port $((WEB_PORT+1)))
+      log "Mencari port kosong... Menemukan port ${new_port}."
+      set_env_value "WEB_PORT" "$new_port"
+      ok "WEB_PORT di ${ENV_FILE} otomatis diupdate ke ${new_port}."
+      export WEB_PORT="$new_port"
     fi
   fi
 }
