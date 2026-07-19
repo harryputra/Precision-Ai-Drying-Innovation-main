@@ -1,0 +1,88 @@
+# ======================================================================
+# SolarDryerAI — stack Docker (dipakai run.sh untuk mode demo & prod).
+# Isolasi demo vs prod via COMPOSE_PROJECT_NAME (di-set run.sh:
+# solardryer-demo / solardryer-prod) → container, network, dan volume
+# otomatis ber-prefix project → data tak pernah bercampur.
+#
+# JANGAN set `container_name:` (bentrok antar mode). Port host beda per
+# mode lewat ${WEB_PORT}/${N8N_PORT} di .env / .env.demo.
+# ======================================================================
+
+x-laravel: &laravel
+  image: solardryer-app:${COMPOSE_PROJECT_NAME:-local}
+  restart: unless-stopped
+  env_file:
+    - ${ENV_FILE:-.env}
+  volumes:
+    - dbdata:/data
+    - appstorage:/var/www/html/storage/app
+
+services:
+  app:
+    <<: *laravel
+    build: .
+    environment:
+      - CONTAINER_ROLE=web
+    ports:
+      # Bind ke 127.0.0.1 saja — publik lewat Cloudflare Tunnel → localhost:WEB_PORT
+      - "127.0.0.1:${WEB_PORT:-8097}:80"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 45s
+
+  queue:
+    <<: *laravel
+    environment:
+      - CONTAINER_ROLE=queue
+    user: www-data
+    command: php artisan queue:work --tries=3 --timeout=90 --sleep=1
+    depends_on:
+      app:
+        condition: service_healthy
+
+  scheduler:
+    <<: *laravel
+    environment:
+      - CONTAINER_ROLE=scheduler
+    user: www-data
+    command: php artisan schedule:work
+    depends_on:
+      app:
+        condition: service_healthy
+
+  reverb:
+    <<: *laravel
+    environment:
+      - CONTAINER_ROLE=reverb
+    user: www-data
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    depends_on:
+      app:
+        condition: service_healthy
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    restart: unless-stopped
+    ports:
+      # UI n8n hanya lokal — akses via SSH tunnel atau tambah hostname Cloudflare
+      - "127.0.0.1:${N8N_PORT:-5681}:5678"
+    environment:
+      - GENERIC_TIMEZONE=${TZ:-Asia/Jakarta}
+      - TZ=${TZ:-Asia/Jakarta}
+      - N8N_SECURE_COOKIE=false
+      # Dipakai node HTTP workflow via {{ $env.AI_WEBHOOK_KEY }} / {{ $env.IOT_DEVICE_KEY }}
+      - AI_WEBHOOK_KEY=${AI_WEBHOOK_KEY:-}
+      - IOT_DEVICE_KEY=${IOT_DEVICE_KEY:-}
+    volumes:
+      - n8ndata:/home/node/.n8n
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  dbdata:
+  appstorage:
+  n8ndata:

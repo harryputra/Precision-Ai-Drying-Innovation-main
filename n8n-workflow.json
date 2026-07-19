@@ -1,0 +1,494 @@
+{
+  "name": "SolarDryerAI - Multi-Agent Sequential v4",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 900
+            }
+          ]
+        }
+      },
+      "id": "trigger-schedule",
+      "name": "Trigger Tiap 15 Menit",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://app/api/ai/context",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "device_id",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-AI-Webhook-Key",
+              "value": "={{ $env.AI_WEBHOOK_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "get-context",
+      "name": "1. Ambil Context (Laravel)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Node 2: Parse & Validasi Context dari /api/ai/context\n// Struktur response:\n// { status: true, data: { device, sensor, weather_current, weather_forecast,\n//                         batch, knowledge, pending_decisions, ai_summary } }\n\nconst response = $input.first().json;\n\nif (!response.status || !response.data) {\n  throw new Error('Context API gagal: ' + JSON.stringify(response));\n}\n\nconst data     = response.data;\nconst sensor   = data.sensor;\nconst batch    = data.batch;\nconst device   = data.device;\nconst aiSummary = data.ai_summary;\n\n// Tidak ada batch aktif (status drying/paused) â†’ skip cycle ini\nif (!batch) {\n  return [{\n    json: {\n      skip: true,\n      reason: 'Tidak ada batch aktif (status drying/paused)',\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Tidak ada data sensor valid â†’ skip\nif (!sensor) {\n  return [{\n    json: {\n      skip: true,\n      reason: 'Tidak ada data sensor valid untuk device ini',\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Sensor stale > 30 menit â†’ skip (kemungkinan device offline)\nconst recordedAt = sensor.recorded_at ? new Date(sensor.recorded_at) : null;\nconst ageMinutes = recordedAt ? (Date.now() - recordedAt.getTime()) / 60000 : 99;\nif (ageMinutes > 30) {\n  return [{\n    json: {\n      skip: true,\n      reason: `Sensor stale ${Math.round(ageMinutes)} menit â€” kemungkinan device offline`,\n      timestamp: new Date().toISOString()\n    }\n  }];\n}\n\n// Flatten sensor: nilai numerik dari Eloquent bisa jadi string, paksa float\nconst s = {\n  temperature_inside:  parseFloat(sensor.temperature_inside  ?? 0),\n  temperature_outside: parseFloat(sensor.temperature_outside ?? 0),\n  humidity_inside:     parseFloat(sensor.humidity_inside     ?? 0),\n  humidity_outside:    parseFloat(sensor.humidity_outside    ?? 0),\n  solar_irradiance:    parseFloat(sensor.solar_irradiance    ?? 0),\n  grain_moisture:      parseFloat(sensor.grain_moisture      ?? 20),\n  grain_weight:        parseFloat(sensor.grain_weight        ?? 0),\n  wind_speed:          parseFloat(sensor.wind_speed          ?? 0),\n  pid_setpoint:        sensor.pid_setpoint != null ? parseFloat(sensor.pid_setpoint) : null,\n  pid_output:          sensor.pid_output   != null ? parseFloat(sensor.pid_output)   : null,\n  ai_active:           sensor.ai_active    ?? false,\n  recorded_at:         sensor.recorded_at\n};\n\n// Flatten batch\nconst b = {\n  id:               batch.id,\n  batch_code:       batch.batch_code,\n  rice_type:        batch.rice_type,\n  rice_variety:     batch.rice_variety,\n  initial_weight:   parseFloat(batch.initial_weight   ?? 0),\n  current_weight:   parseFloat(batch.current_weight   ?? batch.initial_weight ?? 0),\n  initial_moisture: parseFloat(batch.initial_moisture ?? 20),\n  current_moisture: parseFloat(batch.current_moisture ?? batch.initial_moisture ?? 20),\n  target_moisture:  parseFloat(batch.target_moisture  ?? 14),\n  drying_method:    batch.drying_method ?? 'Hybrid',\n  operator_name:    batch.operator_name,\n  petani_name:      batch.petani_name,\n  petani_phone:     batch.petani_phone,\n  status:           batch.status,\n  start_time:       batch.start_time\n};\n\nreturn [{\n  json: {\n    skip:             false,\n    device_id:        device?.id ?? 1,\n    batch_id:         b.id,\n    sensor:           s,\n    batch:            b,\n    weather_current:  data.weather_current  ?? null,\n    weather_forecast: data.weather_forecast ?? null,\n    ai_summary:       aiSummary ?? {},\n    knowledge:        data.knowledge ?? {},\n    // Flag ringkas untuk dipakai agent\n    is_rain_risk_high: (aiSummary?.rain_risk_6h === 'high'),\n    is_temp_critical:  (s.temperature_inside > 57 || s.temperature_inside < 35),\n    is_humidity_high:  (s.humidity_inside > 70),\n    is_grain_dry:      (s.grain_moisture < 14),\n    alerts:            aiSummary?.alerts ?? []\n  }\n}];\n"
+      },
+      "id": "parse-context",
+      "name": "2. Parse & Validasi Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "skip-check",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-skip",
+      "name": "Ada Batch & Sensor?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        840,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// WEATHER AGENT â€” analisis cuaca aktual + forecast OpenWeather\n// Source: data.weather_current (OpenWeather API via OpenWeatherService)\n//         data.weather_forecast (forecastSummaryForAi)\n// Tugas: tentukan apakah aman untuk pengeringan dan rekomendasi aksi cuaca\n\nconst ctx      = $input.first().json;\nconst weather  = ctx.weather_current  ?? {};\nconst forecast = ctx.weather_forecast ?? {};\n\n// Nilai default aman jika API cuaca tidak tersedia\nconst rainfall  = parseFloat(weather.rainfall_1h  ?? 0);\nconst clouds    = parseFloat(weather.clouds       ?? 0);\nconst solarIrr  = parseFloat(ctx.sensor?.solar_irradiance ?? 0);\nconst available = forecast.available ?? false;\n\nlet weatherAgent = {\n  safe_to_dry:     true,\n  reason:          'Cuaca kondusif untuk pengeringan',\n  recommendation:  null,\n  urgency:         'low',\n  solar_available: solarIrr > 200\n};\n\n// Prioritas 1: Hujan aktual (sensor di luar atau OpenWeather)\nif (rainfall > 0.5) {\n  weatherAgent = {\n    safe_to_dry:     false,\n    reason:          `Hujan aktual ${rainfall.toFixed(1)} mm/jam terdeteksi`,\n    recommendation:  'pause_drying',\n    urgency:         'critical',\n    solar_available: false\n  };\n}\n// Prioritas 2: Forecast hujan tinggi dalam 6 jam\nelse if (available && forecast.rain_risk_6h === 'high') {\n  weatherAgent = {\n    safe_to_dry:     false,\n    reason:          `Risiko hujan tinggi 6 jam ke depan (prob: ${forecast.max_pop_6h ?? '?'})`,\n    recommendation:  'prepare_close',\n    urgency:         'high',\n    solar_available: solarIrr > 200\n  };\n}\n// Prioritas 3: Forecast hujan sedang dalam 6 jam\nelse if (available && forecast.rain_risk_6h === 'medium') {\n  weatherAgent = {\n    safe_to_dry:     true,\n    reason:          `Kemungkinan hujan sedang 6 jam ke depan (prob: ${forecast.max_pop_6h ?? '?'}) â€” pantau`,\n    recommendation:  'monitor',\n    urgency:         'medium',\n    solar_available: solarIrr > 200\n  };\n}\n// Prioritas 4: Mendung tebal, surya rendah\nelse if (clouds > 80 || solarIrr < 100) {\n  weatherAgent = {\n    safe_to_dry:     true,\n    reason:          `Awan tebal ${clouds}%, iradiasi surya ${solarIrr} W/mÂ² â€” heater listrik diperlukan`,\n    recommendation:  'use_heater',\n    urgency:         'low',\n    solar_available: false\n  };\n}\n// Prioritas 5: Cuaca cerah, surya optimal\nelse if (clouds < 30 && solarIrr > 400) {\n  weatherAgent = {\n    safe_to_dry:     true,\n    reason:          `Cuaca cerah, iradiasi surya ${solarIrr} W/mÂ² â€” energi surya optimal`,\n    recommendation:  'optimize_solar',\n    urgency:         'low',\n    solar_available: true\n  };\n}\n\n// Sertakan jendela hujan pertama jika ada\nif (available && forecast.next_rain_window) {\n  weatherAgent.next_rain_window = forecast.next_rain_window;\n}\n\nreturn [{ json: { ...ctx, weather_agent: weatherAgent } }];\n"
+      },
+      "id": "weather-agent",
+      "name": "3. Weather Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// DRYER AGENT â€” analisis kondisi fisik alat pengering\n// Arsitektur LLM+PID:\n//   AI tidak kontrol relay heater langsung\n//   AI tentukan target_temperature â†’ PID ESP32 yang capai setpoint itu\n// Tugas: rekomendasikan setpoint suhu + konfigurasi fan berdasarkan sensor\n\nconst ctx    = $input.first().json;\nconst sensor = ctx.sensor;\nconst batch  = ctx.batch;\n\nconst tempIn   = sensor.temperature_inside;\nconst humIn    = sensor.humidity_inside;\nconst solarIrr = sensor.solar_irradiance;\n\n// Koreksi setpoint berdasarkan iradiasi surya (hemat energi hibrida)\n// Surya dominan â†’ heater bisa dikurangi karena panas alami sudah membantu\nlet solarBonus;\nlet solarMode;\nif (solarIrr > 600) {\n  solarBonus = -3;\n  solarMode  = 'surya dominan';\n} else if (solarIrr > 200) {\n  solarBonus = -1;\n  solarMode  = 'hybrid';\n} else {\n  solarBonus = 0;\n  solarMode  = 'listrik dominan';\n}\n\n// PID setpoint aktif di ESP32 (jika ada)\nconst currentSetpoint = sensor.pid_setpoint ?? null;\nconst aiActive        = sensor.ai_active    ?? false;\n\nlet dryerAgent = {\n  target_temp:   45,\n  fan_needed:    true,\n  fan_speed:     70,\n  fan_mode:      'auto',\n  solar_mode:    solarMode,\n  solar_irr:     solarIrr,\n  current_setpoint: currentSetpoint,\n  ai_active_esp32:  aiActive,\n  reason:        '',\n  urgency:       'low'\n};\n\n// KRITIS: suhu terlalu tinggi â€” risiko gabah gosong\nif (tempIn > 57) {\n  dryerAgent = {\n    target_temp:   35,   // setpoint rendah â†’ PID matikan heater\n    fan_needed:    true,\n    fan_speed:     100,\n    fan_mode:      'forced_on',\n    solar_mode:    solarMode,\n    solar_irr:     solarIrr,\n    current_setpoint: currentSetpoint,\n    ai_active_esp32:  aiActive,\n    reason:        `KRITIS: Suhu ${tempIn}Â°C melebihi batas aman 57Â°C â€” setpoint diturunkan ke 35Â°C`,\n    urgency:       'critical'\n  };\n}\n// Suhu terlalu rendah â€” pengeringan tidak efektif\nelse if (tempIn < 38) {\n  const target = Math.max(40, 47 + solarBonus);\n  dryerAgent = {\n    target_temp:   target,\n    fan_needed:    true,\n    fan_speed:     60,\n    fan_mode:      'auto',\n    solar_mode:    solarMode,\n    solar_irr:     solarIrr,\n    current_setpoint: currentSetpoint,\n    ai_active_esp32:  aiActive,\n    reason:        `Suhu ${tempIn}Â°C < 38Â°C, naikkan setpoint ke ${target}Â°C. Surya: ${solarIrr} W/mÂ² (${solarMode})`,\n    urgency:       'high'\n  };\n}\n// RH tinggi â€” butuh sirkulasi ekstra\nelse if (humIn > 75) {\n  const target = Math.max(40, 46 + solarBonus);\n  dryerAgent = {\n    target_temp:   target,\n    fan_needed:    true,\n    fan_speed:     90,\n    fan_mode:      'forced_on',\n    solar_mode:    solarMode,\n    solar_irr:     solarIrr,\n    current_setpoint: currentSetpoint,\n    ai_active_esp32:  aiActive,\n    reason:        `RH ${humIn}% sangat tinggi, fan forced ON. Surya: ${solarIrr} W/mÂ² (${solarMode})`,\n    urgency:       'medium'\n  };\n}\n// Kondisi normal\nelse {\n  // Jika surya cukup, heater listrik bisa dikurangi (efisiensi energi)\n  const heaterSave = solarIrr > 400;\n  const target = Math.max(40, 45 + solarBonus);\n  dryerAgent = {\n    target_temp:   target,\n    fan_needed:    true,\n    fan_speed:     humIn > 65 ? 80 : 70,\n    fan_mode:      humIn > 65 ? 'forced_on' : 'auto',\n    solar_mode:    solarMode,\n    solar_irr:     solarIrr,\n    current_setpoint: currentSetpoint,\n    ai_active_esp32:  aiActive,\n    reason:        `Kondisi normal: suhu ${tempIn}Â°C, RH ${humIn}%, setpoint ${target}Â°C. Surya: ${solarIrr} W/mÂ² (${solarMode})${heaterSave ? ' â€” heater hemat energi' : ''}`,\n    urgency:       'low'\n  };\n}\n\nreturn [{ json: { ...ctx, dryer_agent: dryerAgent } }];\n"
+      },
+      "id": "dryer-agent",
+      "name": "4. Dryer Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// QUALITY AGENT â€” analisis kualitas gabah dan estimasi selesai\n// Input: sensor.grain_moisture (kadar air gabah real-time dari loadcell+kapasitif)\n//        batch.current_moisture, batch.target_moisture\n// Tugas: deteksi risiko (bertunas, gosong), estimasi jam tersisa, rekomendasi stop\n\nconst ctx    = $input.first().json;\nconst sensor = ctx.sensor;\nconst batch  = ctx.batch;\n\nconst grainMoisture  = sensor.grain_moisture;\nconst tempIn         = sensor.temperature_inside;\nconst humIn          = sensor.humidity_inside;\nconst targetMoisture = batch.target_moisture;\n\n// Gunakan grain_moisture dari sensor sebagai sumber kebenaran utama\n// fallback ke batch.current_moisture jika sensor tidak baca kadar air\nconst effectiveMoisture = grainMoisture > 0 ? grainMoisture : (batch.current_moisture ?? batch.initial_moisture);\n\nlet qualityAgent = {\n  risk_level:               'low',\n  risk_sprouting:           false,\n  risk_burnt:               false,\n  grain_dry:                false,\n  effective_moisture:       effectiveMoisture,\n  recommendation:           null,\n  estimated_hours_remaining: null,\n  reason:                   ''\n};\n\n// Prioritas 1: Kadar air sudah mencapai target â†’ selesai\nif (effectiveMoisture <= targetMoisture) {\n  qualityAgent = {\n    risk_level:               'low',\n    risk_sprouting:           false,\n    risk_burnt:               false,\n    grain_dry:                true,\n    effective_moisture:       effectiveMoisture,\n    recommendation:           'stop_heater',\n    estimated_hours_remaining: 0,\n    reason:                   `Kadar air ${effectiveMoisture}% sudah mencapai target ${targetMoisture}% â€” pengeringan selesai`\n  };\n}\n// Prioritas 2: KRITIS â€” risiko bertunas (RH+suhu kombinasi buruk)\nelse if (humIn > 80 && tempIn < 40) {\n  qualityAgent = {\n    risk_level:               'critical',\n    risk_sprouting:           true,\n    risk_burnt:               false,\n    grain_dry:                false,\n    effective_moisture:       effectiveMoisture,\n    recommendation:           'alert_operator',\n    estimated_hours_remaining: null,\n    reason:                   `KRITIS: RH ${humIn}% + suhu ${tempIn}Â°C â€” kondisi ideal untuk gabah bertunas (sprouting)`\n  };\n}\n// Prioritas 3: KRITIS â€” risiko gabah gosong\nelse if (tempIn > 60) {\n  qualityAgent = {\n    risk_level:               'critical',\n    risk_sprouting:           false,\n    risk_burnt:               true,\n    grain_dry:                false,\n    effective_moisture:       effectiveMoisture,\n    recommendation:           'stop_heater',\n    estimated_hours_remaining: null,\n    reason:                   `KRITIS: Suhu ${tempIn}Â°C melebihi 60Â°C â€” risiko kerusakan pati gabah`\n  };\n}\n// Kondisi normal â€” hitung estimasi\nelse {\n  // Laju pengeringan kasar berdasarkan suhu\n  // Referensi: SNI 01-0224-1987 kadar air gabah 14%\n  let dryingRate;\n  if (tempIn >= 50)      dryingRate = 1.4;  // Â°C/jam (pengeringan intensif)\n  else if (tempIn >= 45) dryingRate = 1.0;  // normal\n  else if (tempIn >= 40) dryingRate = 0.7;  // ringan\n  else                   dryingRate = 0.4;  // kurang optimal\n\n  const moistureGap    = Math.max(0, effectiveMoisture - targetMoisture);\n  const hoursRemaining = moistureGap > 0 ? moistureGap / dryingRate : 0;\n\n  qualityAgent = {\n    risk_level:               humIn > 70 ? 'medium' : 'low',\n    risk_sprouting:           humIn > 75 && tempIn < 42,\n    risk_burnt:               false,\n    grain_dry:                false,\n    effective_moisture:       effectiveMoisture,\n    recommendation:           null,\n    estimated_hours_remaining: Math.round(hoursRemaining * 10) / 10,\n    reason:                   `Kadar air ${effectiveMoisture}% â†’ target ${targetMoisture}%, estimasi ${Math.round(hoursRemaining * 10) / 10} jam (laju ${dryingRate}%/jam pada ${tempIn}Â°C)`\n  };\n}\n\nreturn [{ json: { ...ctx, quality_agent: qualityAgent } }];\n"
+      },
+      "id": "quality-agent",
+      "name": "5. Quality Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// AI COORDINATOR â€” LLM+PID Hybrid Architecture (v4)\n// Menggabungkan output ketiga agent â†’ keputusan final\n// AI tentukan setpoint suhu optimal â†’ PID ESP32 yang eksekusi via relay heater\n// Notifikasi sudah ditangani di AIAgentController.decide() â†’ coordinator hanya set flag\n\nconst ctx          = $input.first().json;\nconst weatherAgent = ctx.weather_agent;\nconst dryerAgent   = ctx.dryer_agent;\nconst qualityAgent = ctx.quality_agent;\nconst sensor       = ctx.sensor;\nconst batch        = ctx.batch;\n\n// Helper: clamp setpoint ke range aman 35â€“55Â°C\nconst clamp = (v, min = 35, max = 55) => Math.max(min, Math.min(max, v ?? 45));\n\nlet finalDecision;\n\n// â”€â”€ PRIORITAS 1: Gabah sudah kering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\nif (qualityAgent.grain_dry) {\n  finalDecision = {\n    decision_type:    'stop_heater',\n    reasoning:        qualityAgent.reason.substring(0, 200),\n    confidence_score: 0.99,\n    output_action: {\n      target_temperature: 35,   // PID tidak nyalakan heater\n      fan:        false,\n      fan_speed:  0,\n      duration_hours: 0,\n      mode:       'auto',\n      risk_level: 'low',\n      alerts:     ['Gabah selesai! Kadar air mencapai target ' + batch.target_moisture + '%. Silakan ambil.']\n    }\n  };\n}\n// â”€â”€ PRIORITAS 2: Kondisi kritis gabah (bertunas/gosong) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\nelse if (qualityAgent.risk_level === 'critical') {\n  finalDecision = {\n    decision_type:    qualityAgent.recommendation ?? 'alert_operator',\n    reasoning:        qualityAgent.reason.substring(0, 200),\n    confidence_score: 0.97,\n    output_action: {\n      target_temperature: 35,\n      fan:        true,\n      fan_speed:  100,\n      duration_hours: 0,\n      mode:       'forced_on',\n      risk_level: 'critical',\n      alerts:     [qualityAgent.reason]\n    }\n  };\n}\n// â”€â”€ PRIORITAS 3: Hujan aktual â†’ pause_drying â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\nelse if (!weatherAgent.safe_to_dry && weatherAgent.urgency === 'critical') {\n  finalDecision = {\n    decision_type:    'pause_drying',\n    reasoning:        weatherAgent.reason.substring(0, 200),\n    confidence_score: 0.95,\n    output_action: {\n      target_temperature: 35,\n      fan:        false,\n      fan_speed:  0,\n      duration_hours: 0,\n      mode:       'auto',\n      risk_level: 'high',\n      alerts:     [weatherAgent.reason]\n    }\n  };\n}\n// â”€â”€ PRIORITAS 4: Suhu dryer kritis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\nelse if (dryerAgent.urgency === 'critical') {\n  finalDecision = {\n    decision_type:    'stop_heater',\n    reasoning:        dryerAgent.reason.substring(0, 200),\n    confidence_score: 0.97,\n    output_action: {\n      target_temperature: 35,\n      fan:        true,\n      fan_speed:  100,\n      duration_hours: 1,\n      mode:       'forced_on',\n      risk_level: 'critical',\n      alerts:     [dryerAgent.reason]\n    }\n  };\n}\n// â”€â”€ PRIORITAS 5: Forecast hujan tinggi â†’ kurangi setpoint, siap-siap pause â”€â”€â”€\nelse if (!weatherAgent.safe_to_dry && weatherAgent.urgency === 'high') {\n  const safeTarget = clamp(dryerAgent.target_temp - 4);\n  finalDecision = {\n    decision_type:    'adjust_temperature',\n    reasoning:        (weatherAgent.reason + ' | Setpoint diturunkan preventif').substring(0, 200),\n    confidence_score: 0.85,\n    output_action: {\n      target_temperature: safeTarget,\n      fan:        dryerAgent.fan_needed,\n      fan_speed:  dryerAgent.fan_speed,\n      duration_hours: 1,\n      mode:       'auto',\n      risk_level: 'medium',\n      alerts:     [weatherAgent.reason]\n    }\n  };\n}\n// â”€â”€ PRIORITAS 6: Kondisi normal â€” setpoint optimal berdasarkan kadar air â”€â”€â”€â”€â”€â”€\nelse {\n  const moisture   = qualityAgent.effective_moisture;\n  let baseSetpoint;\n  if      (moisture > 25) baseSetpoint = 52;  // pengeringan intensif\n  else if (moisture > 20) baseSetpoint = 49;  // normal atas\n  else if (moisture > 18) baseSetpoint = 47;  // normal\n  else if (moisture > 16) baseSetpoint = 45;  // menjelang akhir\n  else if (moisture > 14) baseSetpoint = 43;  // akhir, hati-hati\n  else                    baseSetpoint = 35;  // sudah kering\n\n  // Kurangi setpoint jika cuaca warning (hemat energi + preventif)\n  if (weatherAgent.urgency === 'medium') baseSetpoint -= 2;\n  // Kurangi jika RH tinggi\n  if (sensor.humidity_inside > 70) baseSetpoint -= 2;\n\n  const targetTemp = clamp(baseSetpoint);\n  const fanMode    = sensor.humidity_inside > 70 ? 'forced_on' : 'auto';\n  const duration   = qualityAgent.estimated_hours_remaining ?? 2;\n\n  const reasonParts = [\n    weatherAgent.reason,\n    dryerAgent.reason,\n    qualityAgent.reason\n  ].filter(Boolean);\n  const reasoning = reasonParts.join(' | ').substring(0, 200);\n\n  finalDecision = {\n    decision_type:    moisture <= 14 ? 'stop_heater' : 'adjust_temperature',\n    reasoning:        reasoning,\n    confidence_score: weatherAgent.urgency === 'medium' ? 0.78 : 0.85,\n    output_action: {\n      target_temperature: targetTemp,\n      fan:           dryerAgent.fan_needed,\n      fan_speed:     dryerAgent.fan_speed,\n      duration_hours: duration,\n      mode:          fanMode,\n      risk_level:    qualityAgent.risk_level,\n      alerts:        ctx.alerts ?? []\n    }\n  };\n}\n\n// Payload untuk POST /api/ai/decide\nconst decidePayload = {\n  device_id:        ctx.device_id,\n  batch_id:         ctx.batch_id,\n  decision_type:    finalDecision.decision_type,\n  reasoning:        finalDecision.reasoning,\n  confidence_score: finalDecision.confidence_score,\n  ai_model:         'n8n-multiagent-pid-v4',\n  input_data: {\n    sensor: {\n      temperature_inside:  sensor.temperature_inside,\n      humidity_inside:     sensor.humidity_inside,\n      solar_irradiance:    sensor.solar_irradiance,\n      grain_moisture:      sensor.grain_moisture,\n      pid_setpoint:        sensor.pid_setpoint,\n      ai_active:           sensor.ai_active\n    },\n    weather_current: ctx.weather_current\n      ? {\n          temperature:  ctx.weather_current.temperature,\n          humidity:     ctx.weather_current.humidity,\n          clouds:       ctx.weather_current.clouds,\n          rainfall_1h:  ctx.weather_current.rainfall_1h,\n          description:  ctx.weather_current.description\n        }\n      : null,\n    weather_forecast: ctx.weather_forecast\n      ? {\n          rain_risk_6h:    ctx.weather_forecast.rain_risk_6h,\n          rain_risk_24h:   ctx.weather_forecast.rain_risk_24h,\n          max_pop_6h:      ctx.weather_forecast.max_pop_6h,\n          next_rain_window: ctx.weather_forecast.next_rain_window\n        }\n      : null,\n    agents: {\n      weather: weatherAgent,\n      dryer:   dryerAgent,\n      quality: qualityAgent\n    }\n  },\n  output_action: finalDecision.output_action\n};\n\nconsole.log('[Coordinator v4]',\n  finalDecision.decision_type,\n  '| setpoint:', finalDecision.output_action.target_temperature + 'Â°C',\n  '| confidence:', finalDecision.confidence_score,\n  '| risk:', finalDecision.output_action.risk_level\n);\n\nreturn [{\n  json: {\n    ...ctx,\n    final_decision: finalDecision,\n    decide_payload: decidePayload\n  }\n}];\n"
+      },
+      "id": "coordinator",
+      "name": "6. AI Coordinator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// SAVE CONTEXT NODE â€” simpan ctx lengkap SEBELUM HTTP Request\n// Bug fix: setelah node HTTP Request, $json berisi response API bukan ctx\n// Solusi: simpan final_decision + payload di node ini,\n//         lalu node downstream ambil via $('Save Context').first().json\n\nconst ctx = $input.first().json;\n\n// Teruskan semua data ctx + metadata pengiriman\nreturn [{\n  json: {\n    device_id:      ctx.device_id,\n    batch_id:       ctx.batch_id,\n    final_decision: ctx.final_decision,\n    decide_payload: ctx.decide_payload,\n    sensor:         ctx.sensor,\n    batch:          ctx.batch,\n    weather_agent:  ctx.weather_agent,\n    dryer_agent:    ctx.dryer_agent,\n    quality_agent:  ctx.quality_agent,\n    alerts:         ctx.alerts ?? []\n  }\n}];\n"
+      },
+      "id": "save-context",
+      "name": "7. Save Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1940,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://app/api/ai/decide",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-AI-Webhook-Key",
+              "value": "={{ $env.AI_WEBHOOK_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('7. Save Context').first().json.decide_payload) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "post-decision",
+      "name": "8. Simpan Keputusan (Laravel)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// NOTIFICATION AGENT â€” tentukan apakah perlu notifikasi tambahan ke n8n\n// Catatan: notifikasi utama (pause, resume, critical, completed) sudah ditangani\n// secara otomatis di AIAgentController.decide() di Laravel\n// Node ini hanya sebagai safety net untuk alert yang belum ter-cover Laravel\n\n// Ambil ctx dari Save Context (bukan dari response HTTP post-decision)\nconst ctx      = $('7. Save Context').first().json;\nconst decision = ctx.final_decision;\nconst alerts   = decision.output_action?.alerts ?? [];\nconst riskLevel = decision.output_action?.risk_level ?? 'low';\n\n// Hanya kirim notifikasi via n8n jika:\n// 1. Risk critical DAN ada pesan alert, ATAU\n// 2. Risk high DAN ada pesan alert\n// (medium/low sudah diurus Laravel)\nconst shouldNotify = (\n  (riskLevel === 'critical' || riskLevel === 'high') &&\n  alerts.length > 0\n);\n\nif (!shouldNotify) {\n  return [{\n    json: {\n      skip_notification: true,\n      final_decision:    decision,\n      device_id:         ctx.device_id,\n      batch_id:          ctx.batch_id\n    }\n  }];\n}\n\n// Payload ke POST /api/iot/notification\nconst notifPayload = {\n  device_id: ctx.device_id,\n  batch_id:  ctx.batch_id ?? null,\n  type:      riskLevel === 'critical' ? 'alert' : 'warning',\n  category:  decision.decision_type === 'pause_drying'\n               ? 'weather_alert'\n               : (riskLevel === 'critical' ? 'temperature_alert' : 'ai_decision'),\n  title:     riskLevel === 'critical'\n               ? 'ðŸš¨ Kondisi Kritis â€” Perlu Tindakan Segera'\n               : 'âš ï¸ Perhatian Diperlukan',\n  message:   alerts.join(' | ') || decision.reasoning,\n  data: {\n    decision_type: decision.decision_type,\n    risk_level:    riskLevel,\n    target_temp:   decision.output_action?.target_temperature,\n    fan_mode:      decision.output_action?.mode\n  },\n  is_read:   false\n};\n\nreturn [{\n  json: {\n    skip_notification: false,\n    notif_payload:     notifPayload,\n    final_decision:    decision,\n    device_id:         ctx.device_id,\n    batch_id:          ctx.batch_id\n  }\n}];\n"
+      },
+      "id": "notification-agent",
+      "name": "9. Notification Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2380,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "notif-check",
+              "leftValue": "={{ $json.skip_notification }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-notification",
+      "name": "Perlu Notifikasi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://app/api/iot/notification",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Device-Key",
+              "value": "={{ $env.IOT_DEVICE_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.notif_payload) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "post-notification",
+      "name": "10. Kirim Notifikasi (Laravel)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2820,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// SKIP DONE â€” alur ketika tidak ada batch/sensor aktif\n// Di-reach dari output false Ada Batch & Sensor? (index 1)\nconst ctx = $input.first().json;\nconsole.log('[SolarDryerAI] Cycle di-skip:', ctx.reason ?? 'unknown', ctx.timestamp ?? '');\nreturn [{ json: { status: 'skipped', reason: ctx.reason, timestamp: ctx.timestamp } }];\n"
+      },
+      "id": "skip-done",
+      "name": "Skip Done",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// DONE â€” log akhir cycle\n// Di-reach dari: post-notification (setelah kirim notif) atau check-notification false branch\nconst ctx = $input.first().json;\nconst decision = ctx.final_decision ?? {};\nconsole.log('[SolarDryerAI] Cycle selesai:', {\n  decision_type:    decision.decision_type,\n  target_temp:      decision.output_action?.target_temperature,\n  risk_level:       decision.output_action?.risk_level,\n  confidence:       decision.confidence_score,\n  timestamp:        new Date().toISOString()\n});\nreturn [{\n  json: {\n    status:        'done',\n    decision_type: decision.decision_type,\n    target_temp:   decision.output_action?.target_temperature,\n    risk_level:    decision.output_action?.risk_level,\n    timestamp:     new Date().toISOString()\n  }\n}];\n"
+      },
+      "id": "log-done",
+      "name": "Done",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2820,
+        380
+      ]
+    }
+  ],
+  "connections": {
+    "Trigger Tiap 15 Menit": {
+      "main": [
+        [
+          {
+            "node": "1. Ambil Context (Laravel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Ambil Context (Laravel)": {
+      "main": [
+        [
+          {
+            "node": "2. Parse & Validasi Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Parse & Validasi Context": {
+      "main": [
+        [
+          {
+            "node": "Ada Batch & Sensor?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ada Batch & Sensor?": {
+      "main": [
+        [
+          {
+            "node": "3. Weather Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Weather Agent": {
+      "main": [
+        [
+          {
+            "node": "4. Dryer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Dryer Agent": {
+      "main": [
+        [
+          {
+            "node": "5. Quality Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Quality Agent": {
+      "main": [
+        [
+          {
+            "node": "6. AI Coordinator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6. AI Coordinator": {
+      "main": [
+        [
+          {
+            "node": "7. Save Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Save Context": {
+      "main": [
+        [
+          {
+            "node": "8. Simpan Keputusan (Laravel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "8. Simpan Keputusan (Laravel)": {
+      "main": [
+        [
+          {
+            "node": "9. Notification Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "9. Notification Agent": {
+      "main": [
+        [
+          {
+            "node": "Perlu Notifikasi?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perlu Notifikasi?": {
+      "main": [
+        [
+          {
+            "node": "10. Kirim Notifikasi (Laravel)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10. Kirim Notifikasi (Laravel)": {
+      "main": [
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    "solardryerai",
+    "iot",
+    "ai-agent",
+    "sequential",
+    "pid-hybrid"
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2026-07-11T00:00:00.000Z",
+  "versionId": "4"
+}
