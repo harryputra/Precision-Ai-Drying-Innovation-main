@@ -13,6 +13,7 @@ use App\Http\Controllers\Web\KnowledgeWebController;
 use App\Http\Controllers\Web\NotificationWebController;
 use App\Http\Controllers\Web\SystemLogWebController;
 use App\Http\Controllers\Web\ProfileController;
+use App\Http\Controllers\Web\ApiSettingsController;
 use App\Http\Controllers\Web\QuickLoginAdminController;
 use App\Http\Controllers\Web\QuickLoginController;
 use App\Http\Controllers\Web\RoleController;
@@ -127,6 +128,13 @@ Route::middleware('auth')->group(function () {
         // Quick-Login config — toggle tanpa restart
         Route::get('/quick-login', [QuickLoginAdminController::class, 'index'])->name('quick-login.index');
         Route::post('/quick-login', [QuickLoginAdminController::class, 'update'])->name('quick-login.update');
+
+        // API Settings — kelola API keys dari dashboard
+        Route::get('/api-settings', [ApiSettingsController::class, 'index'])->name('api-settings.index');
+        Route::post('/api-settings', [ApiSettingsController::class, 'update'])->name('api-settings.update');
+        Route::post('/api-settings/test-gemini', [ApiSettingsController::class, 'testGemini'])->name('api-settings.test-gemini');
+        Route::post('/api-settings/test-groq', [ApiSettingsController::class, 'testGroq'])->name('api-settings.test-groq');
+        Route::post('/api-settings/test-openweather', [ApiSettingsController::class, 'testOpenWeather'])->name('api-settings.test-openweather');
     });
 });
 

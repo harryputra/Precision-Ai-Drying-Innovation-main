@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Setting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -15,7 +16,7 @@ class OpenWeatherService
 
     public function __construct()
     {
-        $this->apiKey = config('services.openweather.api_key');
+        $this->apiKey = Setting::getOrConfig('openweather_api_key', 'services.openweather.api_key');
         $this->lat    = config('services.openweather.lat', -7.0271);
         $this->lon    = config('services.openweather.lon', 107.5892);
     }

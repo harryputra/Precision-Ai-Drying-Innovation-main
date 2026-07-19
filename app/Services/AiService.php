@@ -7,6 +7,7 @@ use App\Models\Device;
 use App\Models\DryingBatch;
 use App\Models\KnowledgeBase;
 use App\Models\SensorReading;
+use App\Models\Setting;
 use App\Models\WeatherData;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -19,8 +20,8 @@ class AiService
 
     public function __construct(private GroqService $groq)
     {
-        $this->apiKey = config('services.gemini.api_key');
-        $this->model  = config('services.gemini.model', 'gemini-2.0-flash');
+        $this->apiKey = Setting::getOrConfig('gemini_api_key', 'services.gemini.api_key');
+        $this->model  = Setting::getOrConfig('gemini_model', 'services.gemini.model', 'gemini-2.0-flash');
     }
 
     /**
