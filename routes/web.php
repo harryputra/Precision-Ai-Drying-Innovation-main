@@ -16,6 +16,7 @@ use App\Http\Controllers\Web\ProfileController;
 use App\Http\Controllers\Web\ApiSettingsController;
 use App\Http\Controllers\Web\QuickLoginAdminController;
 use App\Http\Controllers\Web\QuickLoginController;
+use App\Http\Controllers\Web\RoleController;
 use App\Http\Controllers\Web\SimulatorController;
 use App\Http\Controllers\Web\ViewerDashboardController;
 use Illuminate\Support\Facades\Route;
