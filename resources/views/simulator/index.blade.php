@@ -152,176 +152,312 @@
 <div class="simulator-grid" style="display:grid;grid-template-columns:1fr;gap:1rem;">
 
     {{-- LEFT: Animated Grain Dryer Visualization --}}
-    <div class="glass-card" style="padding:1.25rem;min-height:480px;position:relative;overflow:hidden;">
+    <div class="glass-card" style="padding:1.25rem;min-height:520px;position:relative;overflow:hidden;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
             <h3 class="card-header-title" style="font-size:0.88rem;">Visualisasi Mesin</h3>
             <span class="badge badge-green" style="font-size:0.65rem;">Real-time</span>
         </div>
 
-        <div style="position:relative;width:100%;height:380px;background:linear-gradient(180deg,#dbeafe 0%,#f0f9ff 50%,#f0fdf4 100%);border-radius:16px;overflow:hidden;border:1px solid #bfdbfe;">
-            {{-- Sun --}}
-            <svg style="position:absolute;top:16px;right:24px;width:70px;height:70px;z-index:2;" viewBox="0 0 70 70">
-                <circle cx="35" cy="35" r="14" fill="#fbbf24" style="filter:drop-shadow(0 0 8px #fbbf24aa);"/>
-                <g stroke="#fbbf24" stroke-width="3" stroke-linecap="round">
-                    <line x1="35" y1="7" x2="35" y2="13" class="sun-beam"/>
-                    <line x1="35" y1="57" x2="35" y2="63" class="sun-beam"/>
-                    <line x1="7" y1="35" x2="13" y2="35" class="sun-beam"/>
-                    <line x1="57" y1="35" x2="63" y2="35" class="sun-beam"/>
-                    <line x1="15" y1="15" x2="19" y2="19" class="sun-beam"/>
-                    <line x1="51" y1="51" x2="55" y2="55" class="sun-beam"/>
-                    <line x1="15" y1="55" x2="19" y2="51" class="sun-beam"/>
-                    <line x1="51" y1="19" x2="55" y2="15" class="sun-beam"/>
+        <div style="position:relative;width:100%;height:420px;background:linear-gradient(180deg,#e0f2fe 0%,#f0f9ff 55%,#ecfdf5 100%);border-radius:16px;overflow:hidden;border:1px solid #bfdbfe;box-shadow:inset 0 0 40px rgba(59,130,246,0.08);">
+            {{-- Sun with layered rays --}}
+            <svg style="position:absolute;top:14px;right:28px;width:90px;height:90px;z-index:2;" viewBox="0 0 90 90">
+                <defs>
+                    <radialGradient id="sunGrad" cx="0.5" cy="0.5" r="0.5">
+                        <stop offset="0%" stop-color="#fef08a"/>
+                        <stop offset="60%" stop-color="#fbbf24"/>
+                        <stop offset="100%" stop-color="#f59e0b"/>
+                    </radialGradient>
+                </defs>
+                <circle cx="45" cy="45" r="18" fill="url(#sunGrad)" style="filter:drop-shadow(0 0 14px #fbbf24cc);"/>
+                <g stroke="#fbbf24" stroke-width="3" stroke-linecap="round" opacity="0.85">
+                    <line x1="45" y1="8" x2="45" y2="15" class="sun-beam"/>
+                    <line x1="45" y1="75" x2="45" y2="82" class="sun-beam"/>
+                    <line x1="8" y1="45" x2="15" y2="45" class="sun-beam"/>
+                    <line x1="75" y1="45" x2="82" y2="45" class="sun-beam"/>
+                    <line x1="18" y1="18" x2="23" y2="23" class="sun-beam"/>
+                    <line x1="67" y1="67" x2="72" y2="72" class="sun-beam"/>
+                    <line x1="18" y1="72" x2="23" y2="67" class="sun-beam"/>
+                    <line x1="67" y1="23" x2="72" y2="18" class="sun-beam"/>
                 </g>
             </svg>
 
             {{-- Clouds --}}
-            <svg style="position:absolute;top:28px;left:20px;width:80px;height:40px;z-index:1;opacity:0.8;" viewBox="0 0 80 40" class="cloud">
-                <path d="M15 28 Q8 28 8 20 Q8 12 18 12 Q20 4 32 4 Q44 4 46 12 Q56 12 56 20 Q56 28 47 28 Z" fill="#fff"/>
-            </svg>
-            <svg style="position:absolute;top:48px;right:100px;width:60px;height:30px;z-index:1;opacity:0.7;" viewBox="0 0 60 30" class="cloud">
-                <path d="M10 22 Q5 22 5 15 Q5 10 14 10 Q16 4 24 4 Q32 4 34 10 Q42 10 42 15 Q42 22 35 22 Z" fill="#fff"/>
-            </svg>
-
-            {{-- Ground --}}
-            <div style="position:absolute;bottom:0;left:0;right:0;height:70px;background:linear-gradient(180deg,#86efac,#16a34a);z-index:1;"></div>
-            <div style="position:absolute;bottom:55px;left:0;right:0;height:4px;background:#15803d;z-index:1;opacity:0.3;"></div>
-
-            {{-- Drying Machine SVG --}}
-            <svg style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);width:320px;height:280px;z-index:3;" viewBox="0 0 320 280">
-                {{-- Solar panel on roof --}}
-                <g transform="translate(60, -10) rotate(-15)">
-                    <rect x="0" y="0" width="80" height="50" rx="4" fill="#1e3a8a" stroke="#1e40af" stroke-width="2"/>
-                    <line x1="0" y1="16" x2="80" y2="16" stroke="#3b82f6" stroke-width="1" opacity="0.5"/>
-                    <line x1="0" y1="32" x2="80" y2="32" stroke="#3b82f6" stroke-width="1" opacity="0.5"/>
-                    <line x1="20" y1="0" x2="20" y2="50" stroke="#3b82f6" stroke-width="1" opacity="0.5"/>
-                    <line x1="40" y1="0" x2="40" y2="50" stroke="#3b82f6" stroke-width="1" opacity="0.5"/>
-                    <line x1="60" y1="0" x2="60" y2="50" stroke="#3b82f6" stroke-width="1" opacity="0.5"/>
-                </g>
-
-                {{-- Main drying chamber --}}
+            <svg style="position:absolute;top:34px;left:28px;width:110px;height:50px;z-index:1;opacity:0.92;" viewBox="0 0 110 50" class="cloud">
                 <defs>
-                    <linearGradient id="chamberGrad" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stop-color="#64748b"/>
-                        <stop offset="50%" stop-color="#94a3b8"/>
-                        <stop offset="100%" stop-color="#64748b"/>
-                    </linearGradient>
-                    <linearGradient id="chamberInner" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#1e293b"/>
-                        <stop offset="100%" stop-color="#334155"/>
-                    </linearGradient>
-                    <linearGradient id="grainGrad" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#d97706"/>
-                        <stop offset="100%" stop-color="#f59e0b"/>
+                    <linearGradient id="cloudGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="100%" stop-color="#f1f5f9"/>
                     </linearGradient>
                 </defs>
+                <path d="M20 38 Q10 38 10 26 Q10 16 24 16 Q27 6 43 6 Q60 6 63 16 Q78 16 78 26 Q78 38 65 38 Z" fill="url(#cloudGrad)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.06))"/>
+            </svg>
+            <svg style="position:absolute;top:58px;right:120px;width:80px;height:38px;z-index:1;opacity:0.85;" viewBox="0 0 80 38" class="cloud">
+                <path d="M15 29 Q8 29 8 20 Q8 12 19 12 Q22 5 33 5 Q44 5 46 12 Q57 12 57 20 Q57 29 48 29 Z" fill="url(#cloudGrad)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.06))"/>
+            </svg>
 
-                {{-- Chamber body --}}
-                <rect x="80" y="60" width="160" height="180" rx="20" fill="url(#chamberGrad)" stroke="#475569" stroke-width="3"/>
-                <rect x="90" y="70" width="140" height="160" rx="15" fill="url(#chamberInner)"/>
+            {{-- Ground with grass blades --}}
+            <div style="position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(180deg,#86efac 0%,#16a34a 70%,#15803d 100%);z-index:1;">
+                <svg style="position:absolute;bottom:0;left:0;right:0;height:40px;width:100%;opacity:0.25;" preserveAspectRatio="none" viewBox="0 0 100 40">
+                    <path d="M0 40 Q5 25 10 40 M12 40 Q16 20 20 40 M25 40 Q28 22 32 40 M38 40 Q42 18 46 40 M52 40 Q56 24 60 40 M65 40 Q68 20 72 40 M78 40 Q82 22 86 40 M90 40 Q94 26 100 40" fill="none" stroke="#14532d" stroke-width="1"/>
+                </svg>
+            </div>
+            <div style="position:absolute;bottom:64px;left:0;right:0;height:4px;background:#15803d;z-index:1;opacity:0.25;"></div>
 
-                {{-- Grain particles --}}
-                <g id="grain-particles">
-                    <circle cx="110" cy="190" r="5" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="135" cy="200" r="6" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="160" cy="185" r="5" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="185" cy="205" r="6" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="210" cy="190" r="5" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="125" cy="170" r="5" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="150" cy="165" r="6" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="175" cy="175" r="5" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="200" cy="165" r="6" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="145" cy="145" r="5" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="170" cy="150" r="6" fill="url(#grainGrad)" class="grain-particle"/>
-                    <circle cx="115" cy="155" r="5" fill="url(#grainGrad)" class="grain-particle"/>
+            {{-- Drying Machine SVG --}}
+            <svg style="position:absolute;bottom:50px;left:50%;transform:translateX(-50%);width:420px;height:300px;z-index:3;" viewBox="0 0 420 300">
+                <defs>
+                    {{-- Metal frame gradient --}}
+                    <linearGradient id="frameMetal" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#475569"/>
+                        <stop offset="25%" stop-color="#94a3b8"/>
+                        <stop offset="50%" stop-color="#cbd5e1"/>
+                        <stop offset="75%" stop-color="#94a3b8"/>
+                        <stop offset="100%" stop-color="#475569"/>
+                    </linearGradient>
+                    <linearGradient id="legMetal" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#334155"/>
+                        <stop offset="50%" stop-color="#64748b"/>
+                        <stop offset="100%" stop-color="#334155"/>
+                    </linearGradient>
+                    {{-- Transparent polycarbonate roof --}}
+                    <linearGradient id="roofGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.35"/>
+                        <stop offset="50%" stop-color="#bfdbfe" stop-opacity="0.25"/>
+                        <stop offset="100%" stop-color="#dbeafe" stop-opacity="0.15"/>
+                    </linearGradient>
+                    <linearGradient id="roofShine" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/>
+                        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+                    </linearGradient>
+                    {{-- Grain realistic --}}
+                    <radialGradient id="grainReal" cx="0.4" cy="0.4" r="0.7">
+                        <stop offset="0%" stop-color="#fde68a"/>
+                        <stop offset="50%" stop-color="#d97706"/>
+                        <stop offset="100%" stop-color="#92400e"/>
+                    </radialGradient>
+                    <linearGradient id="grainPile" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#f59e0b"/>
+                        <stop offset="100%" stop-color="#b45309"/>
+                    </linearGradient>
+                    {{-- Heater glow --}}
+                    <radialGradient id="heaterGlow" cx="0.5" cy="0.5" r="0.5">
+                        <stop offset="0%" stop-color="#fef3c7" stop-opacity="0.9"/>
+                        <stop offset="40%" stop-color="#f97316" stop-opacity="0.6"/>
+                        <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+                    </radialGradient>
+                    {{-- Solar panel --}}
+                    <linearGradient id="solarCell" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#1e40af"/>
+                        <stop offset="100%" stop-color="#172554"/>
+                    </linearGradient>
+                    <linearGradient id="solarFrame" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#e2e8f0"/>
+                        <stop offset="100%" stop-color="#94a3b8"/>
+                    </linearGradient>
+                    {{-- Shadows --}}
+                    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.18"/>
+                    </filter>
+                    <filter id="innerShadow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+                        <feOffset dx="0" dy="2" result="offsetBlur"/>
+                        <feComposite in="offsetBlur" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadowDiff"/>
+                        <feFlood flood-color="#000000" flood-opacity="0.3"/>
+                        <feComposite in2="shadowDiff" operator="in"/>
+                        <feComposite in2="SourceGraphic" operator="over"/>
+                    </filter>
+                </defs>
+
+                {{-- Shadow under the machine --}}
+                <ellipse cx="210" cy="272" rx="165" ry="14" fill="#000000" opacity="0.18"/>
+
+                {{-- Legs / support frame --}}
+                <g id="machine-legs">
+                    <rect x="65" y="220" width="12" height="50" fill="url(#legMetal)" rx="2"/>
+                    <rect x="343" y="220" width="12" height="50" fill="url(#legMetal)" rx="2"/>
+                    <rect x="95" y="240" width="12" height="30" fill="url(#legMetal)" rx="2"/>
+                    <rect x="313" y="240" width="12" height="30" fill="url(#legMetal)" rx="2"/>
+                    <rect x="55" y="265" width="310" height="6" fill="#334155" rx="3" opacity="0.6"/>
                 </g>
 
-                {{-- Heater coils (bottom of chamber) --}}
-                <g id="heater-coils" transform="translate(95, 215)">
-                    <path d="M0 10 Q15 0 30 10 Q45 20 60 10 Q75 0 90 10 Q105 20 120 10" fill="none" stroke="#475569" stroke-width="4" class="heater-coil"/>
-                    <path d="M0 20 Q15 10 30 20 Q45 30 60 20 Q75 10 90 20 Q105 30 120 20" fill="none" stroke="#475569" stroke-width="4" class="heater-coil"/>
+                {{-- Main drying tunnel body ( greenhouse style ) --}}
+                <g filter="url(#dropShadow)">
+                    {{-- Lower metal frame --}}
+                    <rect x="55" y="140" width="310" height="100" rx="8" fill="url(#frameMetal)" stroke="#334155" stroke-width="2"/>
+                    {{-- Side panels --}}
+                    <rect x="65" y="150" width="290" height="80" fill="#f8fafc" opacity="0.9"/>
+                    {{-- Curved roof (polycarbonate) --}}
+                    <path d="M55 140 Q55 70 210 70 Q365 70 365 140 L365 140 L55 140 Z" fill="url(#roofGrad)" stroke="#60a5fa" stroke-width="2" stroke-opacity="0.4"/>
+                    {{-- Roof shine highlight --}}
+                    <path d="M70 130 Q75 85 210 82 Q300 85 340 130" fill="none" stroke="url(#roofShine)" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+                    {{-- Roof frame ribs --}}
+                    <line x1="120" y1="78" x2="120" y2="140" stroke="#93c5fd" stroke-width="2" opacity="0.5"/>
+                    <line x1="210" y1="70" x2="210" y2="140" stroke="#93c5fd" stroke-width="2" opacity="0.5"/>
+                    <line x1="300" y1="78" x2="300" y2="140" stroke="#93c5fd" stroke-width="2" opacity="0.5"/>
                 </g>
 
-                {{-- Temperature gauge on chamber --}}
-                <g transform="translate(120, 85)">
-                    <rect x="0" y="0" width="40" height="20" rx="4" fill="#0f172a" stroke="#475569" stroke-width="1"/>
-                    <text id="svg-temp-inside" x="20" y="14" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="700" font-family="Inter,sans-serif">32.0°</text>
+                {{-- Solar panel array on roof --}}
+                <g transform="translate(210, 68) rotate(-8)" filter="url(#dropShadow)">
+                    <rect x="-80" y="-22" width="160" height="44" rx="3" fill="url(#solarFrame)" stroke="#475569" stroke-width="1.5"/>
+                    <rect x="-75" y="-18" width="150" height="36" rx="1" fill="url(#solarCell)"/>
+                    <g stroke="#3b82f6" stroke-width="0.8" opacity="0.6">
+                        <line x1="-75" y1="-6" x2="75" y2="-6"/>
+                        <line x1="-75" y1="6" x2="75" y2="6"/>
+                        <line x1="-45" y1="-18" x2="-45" y2="18"/>
+                        <line x1="-15" y1="-18" x2="-15" y2="18"/>
+                        <line x1="15" y1="-18" x2="15" y2="18"/>
+                        <line x1="45" y1="-18" x2="45" y2="18"/>
+                    </g>
+                    <text x="0" y="4" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="7" font-weight="700" font-family="Inter,sans-serif">SOLAR PV</text>
                 </g>
 
-                {{-- Fan on left side --}}
-                <g transform="translate(30, 110)">
-                    <circle cx="30" cy="30" r="26" fill="#e2e8f0" stroke="#475569" stroke-width="3"/>
+                {{-- Drying bed with grain pile --}}
+                <g>
+                    {{-- Bed frame --}}
+                    <rect x="75" y="200" width="270" height="22" rx="3" fill="#64748b" stroke="#475569" stroke-width="1"/>
+                    <rect x="80" y="203" width="260" height="16" rx="2" fill="#475569"/>
+                    {{-- Grain pile (upper surface) --}}
+                    <path d="M85 205 Q120 180 160 195 Q190 185 220 198 Q250 188 290 198 Q325 190 335 205 Z" fill="url(#grainPile)" filter="url(#dropShadow)"/>
+                    {{-- Individual grain particles --}}
+                    <g id="grain-particles">
+                        <ellipse cx="105" cy="198" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="125" cy="192" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="145" cy="200" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="165" cy="190" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="185" cy="198" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="205" cy="192" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="225" cy="200" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="245" cy="190" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="265" cy="198" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="285" cy="192" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="305" cy="200" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="115" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="135" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="155" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="175" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="195" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="215" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="235" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="255" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="275" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="295" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                        <ellipse cx="315" cy="205" rx="4" ry="2.5" fill="url(#grainReal)" class="grain-particle"/>
+                    </g>
+                </g>
+
+                {{-- Heater coils under bed --}}
+                <g id="heater-coils" transform="translate(85, 232)">
+                    <ellipse cx="125" cy="8" rx="120" ry="8" fill="url(#heaterGlow)" class="heater-coil" opacity="0"/>
+                    <path d="M10 8 Q30 2 50 8 Q70 14 90 8 Q110 2 130 8 Q150 14 170 8 Q190 2 210 8 Q230 14 250 8" fill="none" stroke="#475569" stroke-width="3" stroke-linecap="round" class="heater-coil"/>
+                    <path d="M10 14 Q30 8 50 14 Q70 20 90 14 Q110 8 130 14 Q150 20 170 14 Q190 8 210 14 Q230 20 250 14" fill="none" stroke="#475569" stroke-width="3" stroke-linecap="round" class="heater-coil"/>
+                </g>
+
+                {{-- Digital temperature display on side --}}
+                <g transform="translate(175, 115)" filter="url(#dropShadow)">
+                    <rect x="0" y="0" width="70" height="28" rx="6" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+                    <rect x="3" y="3" width="64" height="22" rx="4" fill="#020617"/>
+                    <text id="svg-temp-inside" x="35" y="18" text-anchor="middle" fill="#fbbf24" font-size="14" font-weight="900" font-family="monospace">32.0°</text>
+                    <text x="35" y="38" text-anchor="middle" fill="#64748b" font-size="7" font-weight="700" font-family="Inter,sans-serif">INTERNAL TEMP</text>
+                </g>
+
+                {{-- Intake fan (left) with guard --}}
+                <g transform="translate(28, 135)" filter="url(#dropShadow)">
+                    <circle cx="36" cy="36" r="34" fill="#f1f5f9" stroke="#64748b" stroke-width="3"/>
+                    <circle cx="36" cy="36" r="29" fill="none" stroke="#cbd5e1" stroke-width="1"/>
                     <g class="fan-blade" id="fan-blade">
-                        <path d="M30 30 L30 8 L34 8 L34 30 Z" fill="#475569"/>
-                        <path d="M30 30 L48 30 L48 34 L30 34 Z" fill="#475569"/>
-                        <path d="M30 30 L30 52 L26 52 L26 30 Z" fill="#475569"/>
-                        <path d="M30 30 L12 30 L12 26 L30 26 Z" fill="#475569"/>
+                        <path d="M36 36 L36 14 L40 14 L40 36 Z" fill="#475569"/>
+                        <path d="M36 36 L54 36 L54 40 L36 40 Z" fill="#475569"/>
+                        <path d="M36 36 L36 58 L32 58 L32 36 Z" fill="#475569"/>
+                        <path d="M36 36 L18 36 L18 32 L36 32 Z" fill="#475569"/>
+                        <path d="M36 36 L50 22 L53 25 L36 36 Z" fill="#475569"/>
+                        <path d="M36 36 L50 50 L47 53 L36 36 Z" fill="#475569"/>
+                        <path d="M36 36 L22 50 L19 47 L36 36 Z" fill="#475569"/>
+                        <path d="M36 36 L22 22 L25 19 L36 36 Z" fill="#475569"/>
                     </g>
-                    <circle cx="30" cy="30" r="5" fill="#64748b"/>
+                    <circle cx="36" cy="36" r="6" fill="#64748b"/>
+                    {{-- Guard mesh --}}
+                    <circle cx="36" cy="36" r="34" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2 4"/>
                 </g>
 
-                {{-- Exhaust fan on right side --}}
-                <g transform="translate(250, 110)">
-                    <circle cx="10" cy="30" r="20" fill="#e2e8f0" stroke="#475569" stroke-width="2"/>
+                {{-- Exhaust fan (right) with guard --}}
+                <g transform="translate(320, 145)" filter="url(#dropShadow)">
+                    <circle cx="26" cy="26" r="24" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+                    <circle cx="26" cy="26" r="20" fill="none" stroke="#cbd5e1" stroke-width="1"/>
                     <g class="fan-blade exhaust" id="exhaust-blade">
-                        <path d="M10 30 L10 14 L13 14 L13 30 Z" fill="#475569"/>
-                        <path d="M10 30 L22 30 L22 33 L10 33 Z" fill="#475569"/>
-                        <path d="M10 30 L10 46 L7 46 L7 30 Z" fill="#475569"/>
-                        <path d="M10 30 L-2 30 L-2 27 L10 27 Z" fill="#475569"/>
+                        <path d="M26 26 L26 10 L29 10 L29 26 Z" fill="#475569"/>
+                        <path d="M26 26 L38 26 L38 29 L26 29 Z" fill="#475569"/>
+                        <path d="M26 26 L26 42 L23 42 L23 26 Z" fill="#475569"/>
+                        <path d="M26 26 L14 26 L14 23 L26 23 Z" fill="#475569"/>
+                        <path d="M26 26 L36 16 L38 18 L26 26 Z" fill="#475569"/>
+                        <path d="M26 26 L36 36 L34 38 L26 26 Z" fill="#475569"/>
+                        <path d="M26 26 L16 36 L14 34 L26 26 Z" fill="#475569"/>
+                        <path d="M26 26 L16 16 L18 14 L26 26 Z" fill="#475569"/>
                     </g>
-                    <circle cx="10" cy="30" r="4" fill="#64748b"/>
+                    <circle cx="26" cy="26" r="4" fill="#64748b"/>
+                    <circle cx="26" cy="26" r="24" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2 3"/>
                 </g>
 
                 {{-- Steam from exhaust --}}
-                <g id="steam-group" transform="translate(275, 125)">
-                    <circle cx="0" cy="0" r="5" fill="#cbd5e1" class="steam-particle"/>
-                    <circle cx="8" cy="-5" r="4" fill="#cbd5e1" class="steam-particle"/>
-                    <circle cx="-5" cy="-8" r="4" fill="#cbd5e1" class="steam-particle"/>
+                <g id="steam-group" transform="translate(360, 160)">
+                    <circle cx="0" cy="0" r="6" fill="#cbd5e1" class="steam-particle"/>
+                    <circle cx="10" cy="-6" r="5" fill="#cbd5e1" class="steam-particle"/>
+                    <circle cx="-6" cy="-10" r="4" fill="#cbd5e1" class="steam-particle"/>
                 </g>
 
-                {{-- Mixer motor icon at bottom --}}
-                <g transform="translate(150, 248)">
-                    <circle cx="12" cy="12" r="12" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                {{-- Mixer motor at bottom center --}}
+                <g transform="translate(198, 248)" filter="url(#dropShadow)">
+                    <rect x="0" y="0" width="24" height="24" rx="4" fill="#334155" stroke="#475569" stroke-width="2"/>
                     <g id="mixer-icon" transform="translate(12,12)">
                         <circle cx="0" cy="0" r="4" fill="#94a3b8"/>
-                        <line x1="0" y1="-8" x2="0" y2="8" stroke="#94a3b8" stroke-width="2" class="mixer-arm"/>
-                        <line x1="-8" y1="0" x2="8" y2="0" stroke="#94a3b8" stroke-width="2" class="mixer-arm"/>
+                        <line x1="0" y1="-8" x2="0" y2="8" stroke="#94a3b8" stroke-width="2.5" class="mixer-arm"/>
+                        <line x1="-8" y1="0" x2="8" y2="0" stroke="#94a3b8" stroke-width="2.5" class="mixer-arm"/>
                     </g>
+                    <text x="12" y="34" text-anchor="middle" fill="#64748b" font-size="6" font-weight="700" font-family="Inter,sans-serif">MIXER</text>
                 </g>
 
-                {{-- Data packet animation (to server) --}}
-                <g id="data-packet" transform="translate(240, 60)" class="data-packet">
-                    <circle cx="0" cy="0" r="6" fill="#16a34a" style="filter:drop-shadow(0 0 4px #16a34a);"/>
-                    <text x="0" y="3" text-anchor="middle" fill="#fff" font-size="6" font-weight="700">IoT</text>
+                {{-- Airflow arrows (subtle) --}}
+                <g id="airflow-arrows" opacity="0.35">
+                    <path d="M70 180 Q110 175 150 180" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4 4" stroke-linecap="round"/>
+                    <polygon points="150,176 158,180 150,184" fill="#3b82f6"/>
+                    <path d="M270 180 Q310 175 340 175" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 4" stroke-linecap="round"/>
+                    <polygon points="340,171 348,175 340,179" fill="#64748b"/>
+                </g>
+
+                {{-- Data packet to server --}}
+                <g id="data-packet" transform="translate(330, 90)" class="data-packet">
+                    <circle cx="0" cy="0" r="8" fill="#16a34a" style="filter:drop-shadow(0 0 5px #16a34a);"/>
+                    <text x="0" y="2" text-anchor="middle" fill="#fff" font-size="5" font-weight="700" font-family="Inter,sans-serif">IoT</text>
+                    <path d="M-6 10 L-10 14 M-3 12 L-6 17 M2 12 L5 17" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round"/>
                 </g>
             </svg>
 
             {{-- Actuator status pills floating --}}
-            <div style="position:absolute;bottom:12px;left:12px;right:12px;display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;z-index:4;">
-                <div style="display:flex;align-items:center;gap:0.375rem;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;border-radius:20px;padding:0.375rem 0.75rem;backdrop-filter:blur(4px);">
+            <div style="position:absolute;bottom:14px;left:14px;right:14px;display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;z-index:4;">
+                <div style="display:flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.95);border:1px solid #e2e8f0;border-radius:20px;padding:0.4rem 0.85rem;backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,0.06);">
                     <span id="led-heater" class="led off" style="color:#f97316;"></span>
-                    <span style="font-size:0.72rem;font-weight:700;color:#374151;">Heater</span>
+                    <span style="font-size:0.74rem;font-weight:700;color:#374151;">Heater</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:0.375rem;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;border-radius:20px;padding:0.375rem 0.75rem;backdrop-filter:blur(4px);">
+                <div style="display:flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.95);border:1px solid #e2e8f0;border-radius:20px;padding:0.4rem 0.85rem;backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,0.06);">
                     <span id="led-fan" class="led off" style="color:#3b82f6;"></span>
-                    <span style="font-size:0.72rem;font-weight:700;color:#374151;">Fan</span>
+                    <span style="font-size:0.74rem;font-weight:700;color:#374151;">Fan</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:0.375rem;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;border-radius:20px;padding:0.375rem 0.75rem;backdrop-filter:blur(4px);">
+                <div style="display:flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.95);border:1px solid #e2e8f0;border-radius:20px;padding:0.4rem 0.85rem;backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,0.06);">
                     <span id="led-exhaust" class="led off" style="color:#64748b;"></span>
-                    <span style="font-size:0.72rem;font-weight:700;color:#374151;">Exhaust</span>
+                    <span style="font-size:0.74rem;font-weight:700;color:#374151;">Exhaust</span>
                 </div>
-                <div style="display:flex;align-items:center;gap:0.375rem;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;border-radius:20px;padding:0.375rem 0.75rem;backdrop-filter:blur(4px);">
+                <div style="display:flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.95);border:1px solid #e2e8f0;border-radius:20px;padding:0.4rem 0.85rem;backdrop-filter:blur(6px);box-shadow:0 2px 8px rgba(0,0,0,0.06);">
                     <span id="led-mixer" class="led off" style="color:#d97706;"></span>
-                    <span style="font-size:0.72rem;font-weight:700;color:#374151;">Mixer</span>
+                    <span style="font-size:0.74rem;font-weight:700;color:#374151;">Mixer</span>
                 </div>
             </div>
         </div>
 
         {{-- Legend --}}
-        <div style="margin-top:1rem;display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;font-size:0.72rem;color:#64748b;">
-            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#d97706;margin-right:4px;"></span>Gabah</span>
-            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f97316;margin-right:4px;"></span>Heater</span>
-            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6;margin-right:4px;"></span>Ventilasi</span>
-            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#16a34a;margin-right:4px;"></span>Data ke Server</span>
+        <div style="margin-top:1rem;display:flex;gap:1.25rem;flex-wrap:wrap;justify-content:center;font-size:0.74rem;color:#64748b;">
+            <span style="display:flex;align-items:center;gap:0.35rem;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#d97706,#f59e0b);margin-right:2px;box-shadow:0 1px 3px rgba(0,0,0,0.1);"></span>Gabah</span>
+            <span style="display:flex;align-items:center;gap:0.35rem;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;margin-right:2px;box-shadow:0 1px 3px rgba(0,0,0,0.1);"></span>Heater</span>
+            <span style="display:flex;align-items:center;gap:0.35rem;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:2px;box-shadow:0 1px 3px rgba(0,0,0,0.1);"></span>Ventilasi</span>
+            <span style="display:flex;align-items:center;gap:0.35rem;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#16a34a;margin-right:2px;box-shadow:0 1px 3px rgba(0,0,0,0.1);"></span>Data ke Server</span>
         </div>
     </div>
 
