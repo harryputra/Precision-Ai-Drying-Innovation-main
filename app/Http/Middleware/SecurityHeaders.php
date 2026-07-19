@@ -29,8 +29,11 @@ class SecurityHeaders
         $headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
         // Respons personal (user login) jangan pernah di-cache CDN/browser.
+        // Halaman auth publik (login/register/quick-login) juga no-store agar
+        // browser HP tidak menyimpan form dengan token CSRF basi (bfcache) —
+        // penyebab "419 Page Expired" saat tab lama dibuka kembali.
         // Aset statis ber-hash (/build/**) dilayani Apache, tidak lewat sini.
-        if ($request->user() !== null) {
+        if ($request->user() !== null || $request->is('login', 'register', 'q/*')) {
             $headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         }
 

@@ -35,4 +35,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
+
+        // 419 (CSRF kedaluwarsa — form terlalu lama terbuka, umum di HP):
+        // jangan tampilkan layar "419 Page Expired" mentah; muat ulang halaman
+        // dengan token segar + pesan yang bisa dipahami pengguna.
+        // Catatan: TokenMismatchException sudah dikonversi framework menjadi
+        // HttpException(419) SEBELUM callback render dipanggil, jadi tangkap
+        // HttpException lalu saring status 419 (status lain diteruskan).
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, Request $request) {
+            if ($e->getStatusCode() !== 419 || $request->is('api/*') || $request->expectsJson()) {
+                return null; // bukan urusan kita — pakai handler default
+            }
+
+            return redirect()
+                ->back(fallback: route('login'))
+                ->withInput($request->except(['password', 'password_confirmation', '_token']))
+                ->withErrors(['email' => __('Sesi kamu sudah berakhir karena halaman terlalu lama terbuka. Halaman telah dimuat ulang — silakan coba lagi.')]);
+        });
     })->create();
