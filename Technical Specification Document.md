@@ -55,3 +55,19 @@ Halaman admin untuk mengelola API keys (Google Gemini, Groq, OpenWeather) langsu
 #### Metode Testing
 - **Manual (Port):** Jalankan proses di port 8097, deploy ulang dengan `./run.sh deploy`, pastikan script menemukan port baru (misal 8098) dan memperbarui `.env`.
 - **Manual (Panduan):** Verifikasi konten panduan sesuai dengan *codebase* terkini.
+
+### 3. Force HTTPS Middleware
+**Status:** ✅ Selesai  
+**Tanggal:** 2026-07-19  
+**Commit:** `feat: force HTTPS middleware behind reverse proxy in production`
+
+#### Deskripsi
+Middleware `ForceHttps` untuk memaksa redirect koneksi HTTP ke HTTPS pada environment `production`. Hal ini wajib karena cookie session dideklarasikan sebagai `Secure` (hanya bisa dikirim lewat HTTPS). Pengecualian dibuat untuk endpoint `/api/*` agar n8n internal dan ESP32 non-SSL tetap bisa berkomunikasi tanpa terpengaruh redirect.
+
+#### Perubahan Teknis
+- **`app/Http/Middleware/ForceHttps.php`**: Middleware baru untuk deteksi `$request->secure()` dan melakukan secure redirect jika non-secure di environment production.
+- **`bootstrap/app.php`**: Mendaftarkan middleware `ForceHttps` setelah TrustProxies di pipeline global middleware Laravel.
+
+#### Metode Testing
+- **Manual:** Akses menggunakan HTTP biasa (`http://solardryer.trin-polman.id/login`), pastikan otomatis diredirect ke `https://solardryer.trin-polman.id/login`.
+- **API Call:** Panggil `/api/iot/sensor` via HTTP, pastikan tidak ada redirect HTTP 301 ke HTTPS agar koneksi IoT tidak terputus.
