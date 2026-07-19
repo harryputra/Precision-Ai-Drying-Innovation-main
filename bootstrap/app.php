@@ -18,6 +18,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // localhost) — percayai X-Forwarded-* agar deteksi HTTPS & URL benar
         $middleware->trustProxies(at: '*');
 
+        // Produksi: visitor http → redirect https (cookie Secure butuh HTTPS).
+        // WAJIB append (bukan prepend): harus jalan SETELAH TrustProxies
+        // membaca X-Forwarded-Proto — kalau tidak, semua request terdeteksi
+        // http (koneksi apache memang plain) → redirect loop tanpa henti.
+        $middleware->append(\App\Http\Middleware\ForceHttps::class);
+
         $middleware->alias([
             'role'        => \App\Http\Middleware\EnsureRole::class,
             'locale'      => \App\Http\Middleware\SetLocale::class,
