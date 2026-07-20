@@ -62,16 +62,24 @@
         100% { width: 100%; }
     }
 
-    .fan-blade { transform-origin: center; }
+    /* PENTING (anti-glitch): pada SVG, transform-origin:center default-nya
+       mengacu ke pusat KANVAS (view-box) — elemen berputar mengorbit layar
+       ("terbang"). transform-box:fill-box membuat origin = pusat elemen
+       itu sendiri, sehingga kipas/mixer berputar di porosnya. */
+    .fan-blade, .grain-particle, .mixer-icon, .machine-pulse,
+    .data-packet, .steam-particle {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+
     .fan-blade.on { animation: spin 0.55s linear infinite; }
-    .fan-blade.exhaust { animation: spin-reverse 0.4s linear infinite; }
+    .fan-blade.exhaust.on { animation: spin-reverse 0.4s linear infinite; }
 
     .heater-coil { transition: all 0.35s ease; }
     .heater-coil.on { animation: pulse-glow 1.1s ease-in-out infinite; }
     .heater-glow { opacity: 0; transition: opacity 0.4s ease; }
     .heater-glow.on { opacity: 0.85; }
 
-    .grain-particle { transform-origin: center; }
     .grain-particle.on { animation: grain-move 0.9s ease-in-out infinite; }
     .grain-particle.on:nth-child(odd) { animation-duration: 1.15s; }
     .grain-particle.on:nth-child(even) { animation-duration: 0.85s; animation-delay: 0.18s; }
@@ -96,7 +104,6 @@
     .data-packet { opacity: 0; }
     .data-packet.sending { animation: data-packet 0.85s ease-out forwards; }
 
-    .mixer-icon { transform-origin: center; }
     .mixer-icon.on { animation: mixer-spin 1s linear infinite; }
 
     .airflow-arrow { stroke-dasharray: 6 6; opacity: 0; transition: opacity 0.4s ease; }
@@ -108,7 +115,6 @@
     .heat-shimmer.on:nth-child(2) { animation-delay: 0.5s; }
     .heat-shimmer.on:nth-child(3) { animation-delay: 1s; }
 
-    .machine-pulse { transform-origin: center; }
     .machine-pulse.sending { animation: machine-pulse 0.45s ease-out; }
 
     .simulator-metric-card {
@@ -445,10 +451,14 @@
                 {{-- Mixer motor at bottom center --}}
                 <g transform="translate(198, 248)" filter="url(#dropShadow)">
                     <rect x="0" y="0" width="24" height="24" rx="4" fill="#334155" stroke="#475569" stroke-width="2"/>
-                    <g id="mixer-icon" transform="translate(12,12)">
-                        <circle cx="0" cy="0" r="4" fill="#94a3b8"/>
-                        <line x1="0" y1="-8" x2="0" y2="8" stroke="#94a3b8" stroke-width="2.5" class="mixer-arm"/>
-                        <line x1="-8" y1="0" x2="8" y2="0" stroke="#94a3b8" stroke-width="2.5" class="mixer-arm"/>
+                    {{-- translate posisi di wrapper luar — animasi CSS transform
+                         akan MENIMPA atribut transform elemen yang sama --}}
+                    <g transform="translate(12,12)">
+                        <g id="mixer-icon" class="mixer-icon">
+                            <circle cx="0" cy="0" r="4" fill="#94a3b8"/>
+                            <line x1="0" y1="-8" x2="0" y2="8" stroke="#94a3b8" stroke-width="2.5" class="mixer-arm"/>
+                            <line x1="-8" y1="0" x2="8" y2="0" stroke="#94a3b8" stroke-width="2.5" class="mixer-arm"/>
+                        </g>
                     </g>
                     <text x="12" y="34" text-anchor="middle" fill="#64748b" font-size="6" font-weight="700" font-family="Inter,sans-serif">MIXER</text>
                 </g>
@@ -461,11 +471,14 @@
                     <polygon points="340,171 348,175 340,179" fill="#64748b"/>
                 </g>
 
-                {{-- Data packet to server --}}
-                <g id="data-packet" transform="translate(330, 90)" class="data-packet">
-                    <circle cx="0" cy="0" r="8" fill="#16a34a" style="filter:drop-shadow(0 0 5px #16a34a);"/>
-                    <text x="0" y="2" text-anchor="middle" fill="#fff" font-size="5" font-weight="700" font-family="Inter,sans-serif">IoT</text>
-                    <path d="M-6 10 L-10 14 M-3 12 L-6 17 M2 12 L5 17" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round"/>
+                {{-- Data packet to server — translate posisi di wrapper luar,
+                     animasi terbang (translateX/Y) di elemen dalam --}}
+                <g transform="translate(330, 90)">
+                    <g id="data-packet" class="data-packet">
+                        <circle cx="0" cy="0" r="8" fill="#16a34a" style="filter:drop-shadow(0 0 5px #16a34a);"/>
+                        <text x="0" y="2" text-anchor="middle" fill="#fff" font-size="5" font-weight="700" font-family="Inter,sans-serif">IoT</text>
+                        <path d="M-6 10 L-10 14 M-3 12 L-6 17 M2 12 L5 17" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round"/>
+                    </g>
                 </g>
             </svg>
 
@@ -702,6 +715,7 @@
         fanBlade: document.getElementById('fan-blade'),
         exhaustBlade: document.getElementById('exhaust-blade'),
         heaterCoils: document.querySelectorAll('.heater-coil'),
+        mixerIcon: document.getElementById('mixer-icon'),
         grainParticles: document.querySelectorAll('.grain-particle'),
         steamParticles: document.querySelectorAll('.steam-particle'),
         dataPacket: document.getElementById('data-packet'),
@@ -850,6 +864,7 @@
         els.heaterCoils.forEach(el => el.classList.toggle('on', state.heaterOn));
         els.fanBlade.classList.toggle('on', state.fanOn);
         els.exhaustBlade.classList.toggle('on', state.exhaustOn);
+        els.mixerIcon.classList.toggle('on', state.mixerOn);
         els.grainParticles.forEach(el => el.classList.toggle('on', state.mixerOn));
         els.steamParticles.forEach(el => el.classList.toggle('on', state.exhaustOn));
 
